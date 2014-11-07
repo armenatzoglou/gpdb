@@ -219,6 +219,8 @@ extern Relation CdbOpenRelationRv(const RangeVar *relation, LOCKMODE reqmode,
 
 extern HeapScanDesc heap_beginscan(Relation relation, Snapshot snapshot,
 			   int nkeys, ScanKey key);
+extern void heap_setscanlimits(HeapScanDesc scan, BlockNumber startBlk,
+		   BlockNumber endBlk);
 extern void heap_rescan(HeapScanDesc scan, ScanKey key);
 extern void heap_endscan(HeapScanDesc scan);
 extern HeapTuple heap_getnext(HeapScanDesc scan, ScanDirection direction);

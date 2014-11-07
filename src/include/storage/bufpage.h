@@ -365,5 +365,6 @@ extern Size PageGetFreeSpace(Page page);
 extern Size PageGetExactFreeSpace(Page page);
 extern void PageIndexTupleDelete(Page page, OffsetNumber offset);
 extern void PageIndexMultiDelete(Page page, OffsetNumber *itemnos, int nitems);
+extern void PageIndexDeleteNoCompact(Page page, OffsetNumber *itemnos, int nitems);
 
 #endif   /* BUFPAGE_H */

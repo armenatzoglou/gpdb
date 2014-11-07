@@ -8,6 +8,7 @@ subdir = src/backend/access
 top_builddir = ../../..
 include $(top_builddir)/src/Makefile.global
 
-SUBDIRS	    = common gist hash heap index nbtree transam external gin bitmap appendonly aocs
+
+SUBDIRS	    = common gist hash heap index nbtree transam external gin bitmap appendonly aocs brin
 
 include $(top_srcdir)/src/backend/common.mk

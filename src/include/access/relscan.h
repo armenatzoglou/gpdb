@@ -32,6 +32,11 @@ typedef struct HeapScanDescData
 	BlockNumber rs_nblocks;		/* number of blocks to scan */
 	bool		rs_pageatatime; /* verify visibility page-at-a-time? */
 
+	/* state set up at initscan time */
+	BlockNumber rs_startblock;	/* block # to start at */
+	BlockNumber	rs_initblock;	/* block # to consider initial of rel */
+	BlockNumber	rs_numblocks;	/* number of blocks to scan */
+
 	/* scan current state */
 	bool		rs_inited;		/* false = scan not init'd yet */
 	HeapTupleData rs_ctup;		/* current tuple in scan, if any */

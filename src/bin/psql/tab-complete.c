@@ -1157,6 +1157,7 @@ psql_completion(char *text, int start, int end)
 			"toast.autovacuum_vacuum_cost_limit",
 			"toast.autovacuum_vacuum_scale_factor",
 			"toast.autovacuum_vacuum_threshold",
+			"pages_per_range",
 			NULL
 		};
 

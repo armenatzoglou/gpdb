@@ -93,6 +93,8 @@ initscan(HeapScanDesc scan, ScanKey key)
 	 */
 	scan->rs_nblocks = RelationGetNumberOfBlocks(scan->rs_rd);
 
+	scan->rs_initblock = 0;
+	scan->rs_numblocks = InvalidBlockNumber;
 	scan->rs_inited = false;
 	scan->rs_ctup.t_data = NULL;
 	ItemPointerSetInvalid(&scan->rs_ctup.t_self);
@@ -121,6 +123,14 @@ initscan(HeapScanDesc scan, ScanKey key)
 	 */
 	//if (!scan->rs_bitmapscan)
 		pgstat_count_heap_scan(scan->rs_rd);
+}
+
+void
+heap_setscanlimits(HeapScanDesc scan, BlockNumber startBlk, BlockNumber numBlks)
+{
+	scan->rs_startblock = startBlk;
+	scan->rs_initblock = startBlk;
+	scan->rs_numblocks = numBlks;
 }
 
 /*
@@ -555,8 +565,7 @@ heapgettup(HeapScanDesc scan,
 		LockBuffer(scan->rs_cbuf, BUFFER_LOCK_UNLOCK);
 		
 		MIRROREDLOCK_BUFMGR_UNLOCK;
-		// -------- MirroredLock ----------
-		
+	
 		/*
 		 * return NULL if we've exhausted all the pages
 		 */
@@ -571,8 +580,21 @@ heapgettup(HeapScanDesc scan,
 			return;
 		}
 
-		page = backward ? (page - 1) : (page + 1);
-		
+	
+		if (backward)
+        	{
+                          finished = (page == scan->rs_startblock) ||
+                                  (scan->rs_numblocks != InvalidBlockNumber ? --scan->rs_numblocks <= 0 : false);
+                          page--;
+                }
+                else
+                {
+                          page++;
+                          finished = (page == scan->rs_startblock) ||
+                                  (scan->rs_numblocks != InvalidBlockNumber ? --scan->rs_numblocks <= 0 : false);
+                }   
+
+
 		// -------- MirroredLock ----------
 		MIRROREDLOCK_BUFMGR_LOCK;
 		
@@ -829,9 +851,22 @@ heapgettup_pagemode(HeapScanDesc scan,
 			scan->rs_inited = false;
 			return;
 		}
+			
+		if (backward)
+		{
+			finished = (page == scan->rs_startblock) ||
+				(scan->rs_numblocks != InvalidBlockNumber ? --scan->rs_numblocks <= 0 : false);
+			page--;
+		}
+		else
+		{
+			page++;
+			finished = (page == scan->rs_startblock) ||
+				(scan->rs_numblocks != InvalidBlockNumber ? --scan->rs_numblocks <= 0 : false);
 
-		page = backward ? (page - 1) : (page + 1);
-		
+		}
+	
+
 		// -------- MirroredLock ----------
 		MIRROREDLOCK_BUFMGR_LOCK;
 		

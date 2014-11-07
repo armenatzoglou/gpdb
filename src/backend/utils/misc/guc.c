@@ -118,6 +118,8 @@ extern char *SSLCipherSuites;
 #endif
 
 
+int pages_per_range = 0;
+
 static const char *assign_log_destination(const char *value,
 					   bool doit, GucSource source);
 
@@ -1680,7 +1682,15 @@ static struct config_int ConfigureNamesInt[] =
 		&autovacuum_freeze_max_age,
 		200000000, 1000, 2000000000, NULL, NULL
 	},
-
+	{
+		{"pages_per_range", PGC_SIGHUP, DEFUNCT_OPTIONS,
+			gettext_noop("Number of pages that each page range covers in a BRIN index."),
+			NULL,
+			GUC_NOT_IN_SAMPLE | GUC_NO_SHOW_ALL
+		},
+		&pages_per_range,
+		128, 1, 131072, NULL, NULL
+	},
 	{
 		{"tcp_keepalives_idle", PGC_USERSET, CLIENT_CONN_OTHER,
 			gettext_noop("Time between issuing TCP keepalives."),

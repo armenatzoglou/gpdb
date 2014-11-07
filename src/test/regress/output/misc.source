@@ -525,6 +525,8 @@ SELECT user_relns() AS user_relns
  b_star
  box_tbl
  bprime
+ brinopers
+ brintest
  bt_f8_heap
  bt_i4_heap
  bt_name_heap
@@ -652,7 +654,7 @@ SELECT user_relns() AS user_relns
  toyemp
  usr_define_type
  varchar_tbl
-(148 rows)
+(150 rows)
 
 SELECT name(equipment(hobby_construct(text 'skywalking', text 'mer')));
  name 

@@ -15,6 +15,7 @@
 #include "access/bitmap.h"
 #include "access/heapam.h"
 #include "access/xlogmm.h"
+#include "access/brin_xlog.h"
 #include "access/multixact.h"
 #include "access/nbtree.h"
 #include "access/xact.h"

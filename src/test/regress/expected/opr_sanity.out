@@ -885,6 +885,11 @@ ORDER BY 1, 2, 3;
        2742 |            2 | @>
        2742 |            3 | <@
        2742 |            4 | =
+       3580 |            1 | <
+       3580 |            2 | <=
+       3580 |            3 | =
+       3580 |            4 | >=
+       3580 |            5 | >
        3013 |            1 | <
        3013 |            1 | ~<~
        3013 |            2 | <=
@@ -895,7 +900,7 @@ ORDER BY 1, 2, 3;
        3013 |            4 | ~>=~
        3013 |            5 | >
        3013 |            5 | ~>~
-(40 rows)
+(45 rows)
 
 -- Check that all operators linked to by opclass entries have selectivity
 -- estimators.  This is not absolutely required, but it seems a reasonable

@@ -79,6 +79,11 @@ test: select_into select_distinct select_distinct_on select_implicit select_havi
 # temporary tables. So run it separately.
 test: namespace
 
+# ----------
+# Test PostgreSQL BRIN index
+# ----------
+test: brin
+
 # 2-phase commit is not supported by GPDB.
 #test: prepared_xacts
 
