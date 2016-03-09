@@ -332,7 +332,7 @@ drop schema mpp4105_sandbox_gp;
 
 set enable_nestloop=on;
 
-CREATE TABLE satelliteupdatelog (
+CREATE TABLE qp_misc_jiras.satelliteupdatelog (
     id integer NOT NULL,
     "type" character varying NOT NULL,
     "action" character varying NOT NULL,
@@ -350,25 +350,25 @@ CREATE SEQUENCE satelliteupdatelog_id_seq
     NO MINVALUE
     CACHE 1;
 
-ALTER SEQUENCE satelliteupdatelog_id_seq OWNED BY satelliteupdatelog.id;
+ALTER SEQUENCE satelliteupdatelog_id_seq OWNED BY qp_misc_jiras.satelliteupdatelog.id;
 
-ALTER TABLE satelliteupdatelog ALTER COLUMN id SET DEFAULT nextval('satelliteupdatelog_id_seq'::regclass);
-ALTER TABLE ONLY satelliteupdatelog ADD CONSTRAINT satelliteupdatelog_pk PRIMARY KEY (id);
-CREATE INDEX fki_satelliteupdatelog_idadvertiser_fk ON satelliteupdatelog USING btree (idadvertiser);
-CREATE INDEX fki_satelliteupdatelog_idaffiliate_fk ON satelliteupdatelog USING btree (idaffiliate);
-CREATE INDEX fki_satelliteupdatelog_idrep_fk ON satelliteupdatelog USING btree (idrep);
+ALTER TABLE qp_misc_jiras.satelliteupdatelog ALTER COLUMN id SET DEFAULT nextval('satelliteupdatelog_id_seq'::regclass);
+ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelog ADD CONSTRAINT satelliteupdatelog_pk PRIMARY KEY (id);
+CREATE INDEX fki_satelliteupdatelog_idadvertiser_fk ON qp_misc_jiras.satelliteupdatelog USING btree (idadvertiser);
+CREATE INDEX fki_satelliteupdatelog_idaffiliate_fk ON qp_misc_jiras.satelliteupdatelog USING btree (idaffiliate);
+CREATE INDEX fki_satelliteupdatelog_idrep_fk ON qp_misc_jiras.satelliteupdatelog USING btree (idrep);
 ------------------------
 
-CREATE TABLE satelliteupdatelogkey (
+CREATE TABLE qp_misc_jiras.satelliteupdatelogkey (
     idsatelliteupdatelog integer NOT NULL,
     columnname character varying NOT NULL,
     value character varying
 );
 
-ALTER TABLE ONLY satelliteupdatelogkey ADD CONSTRAINT satelliteupdatelogkey_pk PRIMARY KEY (idsatelliteupdatelog, columnname);
-ALTER TABLE ONLY satelliteupdatelogkey ADD CONSTRAINT satelliteupdatelogkey_idsatelliteupdatelog_fk FOREIGN KEY (idsatelliteupdatelog) REFERENCES satelliteupdatelog(id);
+ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelogkey ADD CONSTRAINT satelliteupdatelogkey_pk PRIMARY KEY (idsatelliteupdatelog, columnname);
+ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelogkey ADD CONSTRAINT satelliteupdatelogkey_idsatelliteupdatelog_fk FOREIGN KEY (idsatelliteupdatelog) REFERENCES satelliteupdatelog(id);
 ------------
-CREATE TABLE satellite (
+CREATE TABLE qp_misc_jiras.satellite (
     id integer NOT NULL,
     name character varying NOT NULL,
     "domain" character varying NOT NULL,
@@ -384,13 +384,13 @@ CREATE SEQUENCE satellite_id_seq
     NO MINVALUE
     CACHE 1;
 
-ALTER SEQUENCE satellite_id_seq OWNED BY satellite.id;
+ALTER SEQUENCE satellite_id_seq OWNED BY qp_misc_jiras.satellite.id;
 
-ALTER TABLE satellite ALTER COLUMN id SET DEFAULT nextval('satellite_id_seq'::regclass);
+ALTER TABLE qp_misc_jiras.satellite ALTER COLUMN id SET DEFAULT nextval('satellite_id_seq'::regclass);
 
 
 --------
-CREATE TABLE satelliteupdatelogserver (
+CREATE TABLE qp_misc_jiras.satelliteupdatelogserver (
     idsatelliteupdatelog integer NOT NULL,
     idsatellite integer NOT NULL,
     retrys integer NOT NULL,
@@ -398,27 +398,27 @@ CREATE TABLE satelliteupdatelogserver (
     failurereason character varying
 );
 
-ALTER TABLE ONLY satelliteupdatelogserver ADD CONSTRAINT satelliteupdatelogserver_pk PRIMARY KEY (idsatelliteupdatelog, idsatellite); 
-CREATE INDEX fki_satelliteupdatelogserver_idsatelliteupdatelog_fk ON satelliteupdatelogserver USING btree (idsatelliteupdatelog);
-ALTER TABLE ONLY satelliteupdatelogserver ADD CONSTRAINT satelliteupdatelogserver_idsatellite_fk FOREIGN KEY (idsatellite) REFERENCES satellite(id);
-ALTER TABLE ONLY satelliteupdatelogserver ADD CONSTRAINT satelliteupdatelogserver_idsatelliteupdatelog_fk FOREIGN KEY (idsatelliteupdatelog) REFERENCES satelliteupdatelog(id);
+ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelogserver ADD CONSTRAINT satelliteupdatelogserver_pk PRIMARY KEY (idsatelliteupdatelog, idsatellite); 
+CREATE INDEX fki_satelliteupdatelogserver_idsatelliteupdatelog_fk ON qp_misc_jiras.satelliteupdatelogserver USING btree (idsatelliteupdatelog);
+ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelogserver ADD CONSTRAINT satelliteupdatelogserver_idsatellite_fk FOREIGN KEY (idsatellite) REFERENCES satellite(id);
+ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelogserver ADD CONSTRAINT satelliteupdatelogserver_idsatelliteupdatelog_fk FOREIGN KEY (idsatelliteupdatelog) REFERENCES satelliteupdatelog(id);
 -------------
 
 SELECT /* gptest */ s.id, s.action, s.type, sk.columnName AS "columnName", sk.value
-FROM satelliteUpdateLog AS s
-LEFT JOIN satelliteUpdateLogKey AS sk ON s.id = sk.idSatelliteUpdateLog
-JOIN satelliteUpdateLogServer AS ss ON s.id = ss.idSatelliteUpdateLog
-JOIN satellite AS sat ON sat.id = ss.idSatellite
+FROM qp_misc_jiras.satelliteUpdateLog AS s
+LEFT JOIN qp_misc_jiras.satelliteUpdateLogKey AS sk ON s.id = sk.idSatelliteUpdateLog
+JOIN qp_misc_jiras.satelliteUpdateLogServer AS ss ON s.id = ss.idSatelliteUpdateLog
+JOIN qp_misc_jiras.satellite AS sat ON sat.id = ss.idSatellite
 WHERE ss.completed IS NULL
 AND ss.retrys > 0
 AND sat.enabled
 GROUP BY s.id, s.action, s.type, sk.columnName, sk.value, s.scheduled
 ORDER BY s.scheduled; 
 
-drop table satelliteupdatelog cascade;
-drop table satelliteupdatelogkey cascade;
-drop table satellite cascade;
-drop table satelliteupdatelogserver cascade;
+drop table qp_misc_jiras.satelliteupdatelog cascade;
+drop table qp_misc_jiras.satelliteupdatelogkey cascade;
+drop table qp_misc_jiras.satellite cascade;
+drop table qp_misc_jiras.satelliteupdatelogserver cascade;
 create table qp_misc_jiras.mpp3183_t1 (i int);
 insert into qp_misc_jiras.mpp3183_t1 values (1), (1);
 select * into qp_misc_jiras.mpp3183_t2 from qp_misc_jiras.mpp3183_t1;
@@ -427,325 +427,6 @@ select i from (select i from qp_misc_jiras.mpp3183_t2 union all select i from qp
 drop table qp_misc_jiras.mpp3183_t1;
 drop table qp_misc_jiras.mpp3183_t2;
 drop table qp_misc_jiras.mpp3183_t3;
-CREATE TABLE deal_mwrk (
-    dw_snapshot_dttm timestamp(0) without time zone,
-    dw_batch_window_dt date,
-    dw_source_file_dttm timestamp(0) without time zone,
-    deal_id integer,
-    status character varying,
-    last_modified timestamp without time zone,
-    campaign character varying,
-    start_date character varying,
-    end_date character varying,
-    sales_stage_name character varying,
-    external_notes character varying,
-    user_id integer,
-    user2_id integer,
-    category_discount numeric,
-    print_discount numeric,
-    agency_discount numeric,
-    discount numeric,
-    reservation integer,
-    reservation_expiration date,
-    contact_id integer,
-    billing_notes character varying,
-    total_value numeric,
-    po_number character varying,
-    billing_term_id integer,
-    assistant_user_id integer,
-    agency_account_id integer,
-    advertiser_account_id integer,
-    state_id integer,
-    deal_submitted boolean,
-    deal_accepted boolean,
-    contract_submitted boolean,
-    contract_accepted boolean,
-    account_to_bill_id integer,
-    team_id integer,
-    currency_id integer,
-    tax_business_entity_id integer,
-    split_value1 character varying,
-    split_value2 character varying,
-    split_value3 character varying,
-    split_value4 character varying,
-    user_id1 integer,
-    user_id2 integer,
-    billing_profile_id integer
-) distributed randomly;
-
-explain analyze SELECT DISTINCT
-  dw_source_file_dttm AS begin_eff_dttm
-, COALESCE(
-    LEAD(dw_source_file_dttm, 1) OVER (
-      PARTITION BY deal_id
-          ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-    ) - CAST('1 second' AS INTERVAL)
-  , 'infinity'::timestamp(0)
-  ) AS eff_end_dttm
-, deal_id
-, status
-, last_modified
-, campaign
-, start_date
-, end_date
-, sales_stage_name
-, external_notes
-, user_id
-, user2_id
-, category_discount
-, print_discount
-, agency_discount
-, discount
-, discount
-, reservation
-, reservation_expiration
-, contact_id
-, billing_notes
-, total_value
-, po_number
-, billing_term_id
-, assistant_user_id
-, agency_account_id
-, advertiser_account_id
-, state_id
-, deal_submitted
-, deal_accepted
-, contract_submitted
-, contract_accepted
-, account_to_bill_id
-, team_id
-, currency_id
-, tax_business_entity_id
-, split_value1
-, split_value2
-, split_value3
-, split_value4
-, user_id1
-, user_id2
-, billing_profile_id
-FROM (
-  SELECT
-    *
-  FROM (
-    SELECT
-      *
-    , ROW_NUMBER() OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS row_number
-    , LAG(deal_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_deal_id
-    , LAG(status) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_status
-    , LAG(last_modified) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_last_modified
-    , LAG(campaign) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_campaign
-    , LAG(start_date) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_start_date
-    , LAG(end_date) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_end_date
-    , LAG(sales_stage_name) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_sales_stage_name
-    , LAG(external_notes) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_external_notes
-    , LAG(user_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_user_id
-    , LAG(user2_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_user2_id
-    , LAG(category_discount) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_category_discount
-    , LAG(print_discount) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_print_discount
-    , LAG(agency_discount) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_agency_discount
-    , LAG(discount) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_discount
-    , LAG(reservation) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_reservation
-    , LAG(reservation_expiration) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_reservation_expiration
-    , LAG(contact_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_contact_id
-    , LAG(billing_notes) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_billing_notes
-    , LAG(total_value) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_total_value
-    , LAG(po_number) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_po_number
-    , LAG(billing_term_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_billing_term_id
-    , LAG(assistant_user_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_assistant_user_id
-    , LAG(agency_account_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_agency_account_id
-    , LAG(advertiser_account_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_advertiser_account_id
-    , LAG(state_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_state_id
-    , LAG(deal_submitted) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_deal_submitted
-    , LAG(deal_accepted) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_deal_accepted
-    , LAG(contract_submitted) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_contract_submitted
-    , LAG(contract_accepted) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_contract_accepted
-    , LAG(account_to_bill_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_account_to_bill_id
-    , LAG(team_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_team_id
-    , LAG(currency_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_currency_id
-    , LAG(tax_business_entity_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_tax_business_entity_id
-    , LAG(split_value1) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_split_value1
-    , LAG(split_value2) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_split_value2
-    , LAG(split_value3) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_split_value3
-    , LAG(split_value4) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_split_value4
-    , LAG(user_id1) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_user_id1
-    , LAG(user_id2) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_user_id2
-    , LAG(billing_profile_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_billing_profile_id
-    FROM
-      deal_mwrk
-  ) foo
-  WHERE
-    row_number = 1 OR
-    NOT (
-          (1 = 1)
-      AND (deal_id = lag_deal_id OR (deal_id IS NULL AND lag_deal_id IS NULL))
-      AND (status = lag_status OR (status IS NULL AND lag_status IS NULL))
-      AND (last_modified = lag_last_modified OR (last_modified IS NULL AND lag_last_modified IS NULL))
-      AND (campaign = lag_campaign OR (campaign IS NULL AND lag_campaign IS NULL))
-      AND (start_date = lag_start_date OR (start_date IS NULL AND lag_start_date IS NULL))
-      AND (end_date = lag_end_date OR (end_date IS NULL AND lag_end_date IS NULL))
-      AND (sales_stage_name = lag_sales_stage_name OR (sales_stage_name IS NULL AND lag_sales_stage_name IS NULL))
-      AND (external_notes = lag_external_notes OR (external_notes IS NULL AND lag_external_notes IS NULL))
-      AND (user_id = lag_user_id OR (user_id IS NULL AND lag_user_id IS NULL))
-      AND (user2_id = lag_user2_id OR (user2_id IS NULL AND lag_user2_id IS NULL))
-      AND (category_discount = lag_category_discount OR (category_discount IS NULL AND lag_category_discount IS NULL))
-      AND (print_discount = lag_print_discount OR (print_discount IS NULL AND lag_print_discount IS NULL))
-      AND (agency_discount = lag_agency_discount OR (agency_discount IS NULL AND lag_agency_discount IS NULL))
-      AND (discount = lag_discount OR (discount IS NULL AND lag_discount IS NULL))
-      AND (reservation = lag_reservation OR (reservation IS NULL AND lag_reservation IS NULL))
-      AND (reservation_expiration = lag_reservation_expiration OR (reservation_expiration IS NULL AND lag_reservation_expiration IS NULL))
-      AND (contact_id = lag_contact_id OR (contact_id IS NULL AND lag_contact_id IS NULL))
-      AND (billing_notes = lag_billing_notes OR (billing_notes IS NULL AND lag_billing_notes IS NULL))
-      AND (total_value = lag_total_value OR (total_value IS NULL AND lag_total_value IS NULL))
-      AND (po_number = lag_po_number OR (po_number IS NULL AND lag_po_number IS NULL))
-      AND (billing_term_id = lag_billing_term_id OR (billing_term_id IS NULL AND lag_billing_term_id IS NULL))
-      AND (assistant_user_id = lag_assistant_user_id OR (assistant_user_id IS NULL AND lag_assistant_user_id IS NULL))
-      AND (agency_account_id = lag_agency_account_id OR (agency_account_id IS NULL AND lag_agency_account_id IS NULL))
-      AND (advertiser_account_id = lag_advertiser_account_id OR (advertiser_account_id IS NULL AND lag_advertiser_account_id IS NULL))
-      AND (state_id = lag_state_id OR (state_id IS NULL AND lag_state_id IS NULL))
-      AND (deal_submitted = lag_deal_submitted OR (deal_submitted IS NULL AND lag_deal_submitted IS NULL))
-      AND (deal_accepted = lag_deal_accepted OR (deal_accepted IS NULL AND lag_deal_accepted IS NULL))
-      AND (contract_submitted = lag_contract_submitted OR (contract_submitted IS NULL AND lag_contract_submitted IS NULL))
-      AND (contract_accepted = lag_contract_accepted OR (contract_accepted IS NULL AND lag_contract_accepted IS NULL))
-      AND (account_to_bill_id = lag_account_to_bill_id OR (account_to_bill_id IS NULL AND lag_account_to_bill_id IS NULL))
-      AND (team_id = lag_team_id OR (team_id IS NULL AND lag_team_id IS NULL))
-      AND (currency_id = lag_currency_id OR (currency_id IS NULL AND lag_currency_id IS NULL))
-      AND (tax_business_entity_id = lag_tax_business_entity_id OR (tax_business_entity_id IS NULL AND lag_tax_business_entity_id IS NULL))
-      AND (split_value1 = lag_split_value1 OR (split_value1 IS NULL AND lag_split_value1 IS NULL))
-      AND (split_value2 = lag_split_value2 OR (split_value2 IS NULL AND lag_split_value2 IS NULL))
-      AND (split_value3 = lag_split_value3 OR (split_value3 IS NULL AND lag_split_value3 IS NULL))
-      AND (split_value4 = lag_split_value4 OR (split_value4 IS NULL AND lag_split_value4 IS NULL))
-      AND (user_id1 = lag_user_id1 OR (user_id1 IS NULL AND lag_user_id1 IS NULL))
-      AND (user_id2 = lag_user_id2 OR (user_id2 IS NULL AND lag_user_id2 IS NULL))
-      AND (billing_profile_id = lag_billing_profile_id OR (billing_profile_id IS NULL AND lag_billing_profile_id IS NULL
-))
-    )
-) bar
-;
-
-drop table deal_mwrk;
 create table qp_misc_jiras.mpp5028_part_test (a int, b date,c text) 
 partition by range(b)
 (
@@ -1308,13 +989,13 @@ drop table qp_misc_jiras.mpp6419_test;
 \echo -- m/pg_temp/
 \echo '-- s/pg_temp_(\\d)+/pg_temp_xx/'
 \echo -- end_matchsubs
-create temp table foo (a int, b text);
+create temp table qp_misc_jiras_foo (a int, b text);
 
 -- start_ignore
 select 'drop schema '||nspname||' cascade;' from pg_namespace where nspname like '%temp%';
 -- end_ignore
 
-CREATE TABLE m_ccr_mthy_cr_nds_t00
+CREATE TABLE qp_misc_jiras.m_ccr_mthy_cr_nds_t00
 (
 cls_yymm date,
 plyno character(16),
@@ -1334,7 +1015,7 @@ nrdps_adr_sgng character(30),
 nrdps_adr_twmd character(30),
 udrtk_gu_arecd character(10)
 );
-CREATE TABLE m_ccr_cvr_nds_t99
+CREATE TABLE qp_misc_jiras.m_ccr_cvr_nds_t99
 (
 cls_yymm date,
 plyno character(16),
@@ -1358,7 +1039,7 @@ nds_lgb character(2)
 )
 WITH (OIDS=FALSE);
 
-CREATE TABLE ins_cr_nds_dt
+CREATE TABLE qp_misc_jiras.ins_cr_nds_dt
 (
 plyno character varying(16) NOT NULL, 
 ndsno character(4) NOT NULL, 
@@ -1390,7 +1071,7 @@ load_dthms timestamp(0) without time zone
 )
 WITH (OIDS=FALSE);
 
-CREATE TABLE ins_cr_nds_mstr
+CREATE TABLE qp_misc_jiras.ins_cr_nds_mstr
 (
 plyno character varying(16) NOT NULL, 
 ndsno character(4) NOT NULL, 
@@ -1506,10 +1187,10 @@ WHEN NDS_DT_ITNM IN ('자차','자기차량가입금액','자기부담금액','�
 WHEN NDS_DT_ITNM IN ('기계 가입금액','기계장치가입금액') THEN '207'
 ELSE '299' END NDS_MGB
 ,'2' NDS_LGB 
-FROM M_CCR_MTHY_CR_NDS_T00 S1 /******공통사용예정********/
-INNER JOIN INS_CR_NDS_DT A1
+FROM qp_misc_jiras.M_CCR_MTHY_CR_NDS_T00 S1 /******공통사용예정********/
+INNER JOIN qp_misc_jiras.INS_CR_NDS_DT A1
 ON S1.PLYNO=A1.PLYNO
-LEFT OUTER JOIN INS_CR_NDS_MSTR A2
+LEFT OUTER JOIN qp_misc_jiras.INS_CR_NDS_MSTR A2
 ON A1.PLYNO = A2.PLYNO
 AND A1.NDSNO = A2.NDSNO 
 ) T1
@@ -1524,7 +1205,9 @@ FROM M_CCR_CVR_NDS_T99
 WHERE T.SQ = 1 
 ;
 
-drop table ins_cr_nds_dt, ins_cr_nds_mstr, m_ccr_cvr_nds_t99, m_ccr_mthy_cr_nds_t00;
+drop table qp_misc_jiras.ins_cr_nds_dt, qp_misc_jiras.ins_cr_nds_mstr, qp_misc_jiras.m_ccr_cvr_nds_t99, qp_misc_jiras.m_ccr_mthy_cr_nds_t00;
+
+reset gp_select_invisible;
 
 create table qp_misc_jiras.mpp6448 (x "char");
 insert into qp_misc_jiras.mpp6448 values ('a');
@@ -1544,8 +1227,8 @@ drop table qp_misc_jiras.mpp6833_anl;
 drop table qp_misc_jiras.mpp6833_vac;
 -- actual query
 
-drop table if exists foo;
-create table foo(x int) distributed by (x);
+drop table if exists qp_misc_jiras.foo;
+create table qp_misc_jiras.foo(x int) distributed by (x);
 
 SELECT t.attrnums, a.attname, pg_catalog.format_type(a.atttypid, a.atttypmod),
 a.attnotnull, a.attnum, pg_catalog.col_description(a.attrelid, a.attnum)
@@ -1558,13 +1241,13 @@ WHERE c.relname ~ '^(foo)$';
 
 -- previously supported query
 
-drop table if exists bar;
-create table bar (t int, d int, g int);
+drop table if exists qp_misc_jiras.bar;
+create table qp_misc_jiras.bar (t int, d int, g int);
 
-insert into bar values(1,2,3);
-insert into bar values(4,5,6);
+insert into qp_misc_jiras.bar values(1,2,3);
+insert into qp_misc_jiras.bar values(4,5,6);
 
-select a.t from bar a where d in(select d from bar b where a.g=b.g) order by a.t;
+select a.t from qp_misc_jiras.bar a where d in(select d from bar b where a.g=b.g) order by a.t;
 -- Various AO/CO util functions
 drop table if exists qp_misc_jiras.mpp7126_ao;
 drop table if exists qp_misc_jiras.mpp7126_ao_zlib3;
@@ -1913,7 +1596,7 @@ DROP TABLE IF EXISTS one_of_every_data_type;
 -- end_ignore
 
 -- Create a column-oriented table.
-CREATE TABLE one_of_every_data_type (
+CREATE TABLE qp_misc_jiras.one_of_every_data_type (
     id BIGINT,
     lseg_col LSEG,
     serial_col SERIAL
@@ -1927,22 +1610,22 @@ CREATE FUNCTION TO_LSEG(TEXT) RETURNS LSEG AS
     SELECT lseg_in(textout($1))
   $$ LANGUAGE SQL;
 
-INSERT INTO one_of_every_data_type ( lseg_col)
+INSERT INTO qp_misc_jiras.one_of_every_data_type ( lseg_col)
  VALUES (
   TO_LSEG('((' || 1 || ', ' || 1 || '), (' || 1 + 1 || ', ' || 1 + 1 || '))')
   ) ;
 
-INSERT INTO one_of_every_data_type ( lseg_col)
+INSERT INTO qp_misc_jiras.one_of_every_data_type ( lseg_col)
  VALUES (
   TO_LSEG('((' || 1 || ', ' || 1 || '), (' || 1 + 1 || ', ' || 1 + 1 || '))')
   ) ;
 
 
 -- Retrieve data from the table.
-SELECT * FROM one_of_every_data_type ORDER BY id,serial_col;
+SELECT * FROM qp_misc_jiras.one_of_every_data_type ORDER BY id,serial_col;
 
 -- Clean up.
-DROP TABLE IF EXISTS one_of_every_data_type; 
+DROP TABLE IF EXISTS qp_misc_jiras.one_of_every_data_type; 
 
 drop table if exists qp_misc_jiras.mpp7553_test;
 create table qp_misc_jiras.mpp7553_test (i int, j int);
@@ -2024,20 +1707,20 @@ drop table if exists qp_misc_jiras.mpp6775_bar;
 -- Test Set 1
 --
 set optimizer_segments=3;
-drop table if exists sample;
-create table sample as select generate_series(1,1000);
+drop table if exists qp_misc_jiras.sample;
+create table qp_misc_jiras.sample as select generate_series(1,1000);
 
-drop table if exists fim1;
-create table fim1 (a int);
-insert into fim1 values(100);
-insert into fim1 values(200);
-insert into fim1 values(300);
+drop table if exists qp_misc_jiras.fim1;
+create table qp_misc_jiras.fim1 (a int);
+insert into qp_misc_jiras.fim1 values(100);
+insert into qp_misc_jiras.fim1 values(200);
+insert into qp_misc_jiras.fim1 values(300);
 
-drop table if exists pg_foo;
-create table pg_foo(x int);
-insert into pg_foo values(111);
-insert into pg_foo values(222);
-insert into pg_foo values(333);
+drop table if exists qp_misc_jiras.pg_foo;
+create table qp_misc_jiras.pg_foo(x int);
+insert into qp_misc_jiras.pg_foo values(111);
+insert into qp_misc_jiras.pg_foo values(222);
+insert into qp_misc_jiras.pg_foo values(333);
 
 
 create or replace function func1(int) returns int as $$
@@ -2050,28 +1733,28 @@ end;
 $$
 language plpgsql;
 
-drop table if exists bar;
-create table bar(a int);
+drop table if exists qp_misc_jiras.bar;
+create table qp_misc_jiras.bar(a int);
 
 
-explain select gp_segment_id, a, func1(a) from fim1; -- we allow this
+explain select gp_segment_id, a, func1(a) from qp_misc_jiras.fim1; -- we allow this
 -- I ignored the select statement bcoz it was returning the count(*) of pg_class which can be varying. Hence ignored the select query.
 -- start_ignore
-select gp_segment_id, a, func1(a) from fim1; -- we allow this
+select gp_segment_id, a, func1(a) from qp_misc_jiras.fim1; -- we allow this
 -- end_ignore
 
 create or replace function func2(int) returns int as $$
 declare
 	t1 int;
 begin
-	execute 'select count(*) from pg_foo' into t1;
+	execute 'select count(*) from qp_misc_jiras.pg_foo' into t1;
 	return t1;
 end;
 $$
 language plpgsql;
 
-explain select gp_segment_id, a, func2(a) from fim1; -- we should disallow this
-select gp_segment_id, a, func2(a) from fim1; -- we should disallow this
+explain select gp_segment_id, a, func2(a) from qp_misc_jiras.fim1; -- we should disallow this
+select gp_segment_id, a, func2(a) from qp_misc_jiras.fim1; -- we should disallow this
 
 
 create or replace function func3(int) returns int as $$
@@ -2085,18 +1768,18 @@ $$
 language plpgsql;
 
 
-explain select gp_segment_id, a, func3(a) from fim1; -- we allow this
-select gp_segment_id, a, func3(a) from fim1; -- we allow this
+explain select gp_segment_id, a, func3(a) from qp_misc_jiras.fim1; -- we allow this
+select gp_segment_id, a, func3(a) from qp_misc_jiras.fim1; -- we allow this
 
 --
 -- Test Set 2
 --
 
-drop table if exists fim1;
+drop table if exists qp_misc_jiras.fim1;
 
-create table fim1 (a int, chldrn_id varchar(50)) ;
-insert into fim1 values (1,'1~9');
-insert into fim1 values (2,'2~9');
+create table qp_misc_jiras.fim1 (a int, chldrn_id varchar(50)) ;
+insert into qp_misc_jiras.fim1 values (1,'1~9');
+insert into qp_misc_jiras.fim1 values (2,'2~9');
 
 CREATE OR REPLACE FUNCTION public.array_intersect1(anyarray, anyarray) RETURNS anyarray as $$
 SELECT ARRAY(SELECT x FROM unnest($1) x INTERSECT SELECT y from unnest($2) y)
@@ -2119,82 +1802,82 @@ SELECT ARRAY(SELECT $1[i]
 $$ language sql immutable;
 
 
-select array_intersect1(array[1,9]::int4[], array[-1,5,4,3,2,1,0]::int4[]) from fim1; -- we allow it even though the function is volatile.
-select array_intersect2(array[1,9]::int4[], array[-1,5,4,3,2,1,0]::int4[]) from fim1; -- we allow it even though the function is volatile.
-select array_intersect3(array[1,9]::int4[], array[-1,5,4,3,2,1,0]::int4[]) from fim1; -- should work.
-select array_intersect4(array[1,9]::int4[], array[-1,5,4,3,2,1,0]::int4[]) from fim1; -- should work.
+select array_intersect1(array[1,9]::int4[], array[-1,5,4,3,2,1,0]::int4[]) from qp_misc_jiras.fim1; -- we allow it even though the function is volatile.
+select array_intersect2(array[1,9]::int4[], array[-1,5,4,3,2,1,0]::int4[]) from qp_misc_jiras.fim1; -- we allow it even though the function is volatile.
+select array_intersect3(array[1,9]::int4[], array[-1,5,4,3,2,1,0]::int4[]) from qp_misc_jiras.fim1; -- should work.
+select array_intersect4(array[1,9]::int4[], array[-1,5,4,3,2,1,0]::int4[]) from qp_misc_jiras.fim1; -- should work.
 
-select array_intersect3(i::int4[], array[-1,5,4,3,2,1,0]::int4[]) from (select string_to_array(chldrn_id,'~') as i from fim1) b  ; -- should produce {1},{2}
+select array_intersect3(i::int4[], array[-1,5,4,3,2,1,0]::int4[]) from (select string_to_array(chldrn_id,'~') as i from qp_misc_jiras.fim1) b  ; -- should produce {1},{2}
 
-select array_intersect4(i::int4[], array[-1,5,4,3,2,1,0]::int4[]) from (select string_to_array(chldrn_id,'~') as i from fim1) b  ; -- should produce {1},{2}
+select array_intersect4(i::int4[], array[-1,5,4,3,2,1,0]::int4[]) from (select string_to_array(chldrn_id,'~') as i from qp_misc_jiras.fim1) b  ; -- should produce {1},{2}
 
 drop function func1(int);
 drop function func2(int);
 drop function func3(int);
 
-drop table sample;
-drop table fim1;
-drop table pg_foo;
-drop table bar;
+drop table qp_misc_jiras.sample;
+drop table qp_misc_jiras.fim1;
+drop table qp_misc_jiras.pg_foo;
+drop table qp_misc_jiras.bar;
 
 -- Create 2 tables from which we can inherit.  
-CREATE TABLE tableA (ssn INT, lastName VARCHAR, junk INT) DISTRIBUTED BY (ssn);
-CREATE TABLE tableB (id INT, lastName VARCHAR, moreJunk INT) DISTRIBUTED BY (id);
+CREATE TABLE qp_misc_jiras.tableA (ssn INT, lastName VARCHAR, junk INT) DISTRIBUTED BY (ssn);
+CREATE TABLE qp_misc_jiras.tableB (id INT, lastName VARCHAR, moreJunk INT) DISTRIBUTED BY (id);
 -- Create a table that inherits from the previous two.
-CREATE TABLE tableC (uid INT) INHERITS (tableA, tableB) DISTRIBUTED BY (uid);
+CREATE TABLE qp_misc_jiras.tableC (uid INT) INHERITS (qp_misc_jiras.tableA, qp_misc_jiras.tableB) DISTRIBUTED BY (uid);
 
 -- Expose the bug.
-SELECT * FROM tableC;
+SELECT * FROM qp_misc_jiras.tableC;
 
 -- start_ignore
-DROP TABLE tableE;
-DROP TABLE tableD;
-DROP TABLE tableC;
-DROP TABLE tableB;
-DROP TABLE tableA;
+DROP TABLE qp_misc_jiras.tableE;
+DROP TABLE qp_misc_jiras.tableD;
+DROP TABLE qp_misc_jiras.tableC;
+DROP TABLE qp_misc_jiras.tableB;
+DROP TABLE qp_misc_jiras.tableA;
 -- end_ignore
 
 
-CREATE TABLE tableA (ssn INT, lastName VARCHAR, junk INT) DISTRIBUTED BY (ssn);
-CREATE TABLE tableB (id INT, lastName VARCHAR, moreJunk INT) DISTRIBUTED BY (id);
-INSERT INTO tablea VALUES (1, 'foo',2);
-INSERT INTO tableb VALUES (2, 'bar',4);
-CREATE TABLE tableC (uid1 INT, uid2 INT, uid3 INT) INHERITS (tableA, tableB) DISTRIBUTED BY (uid1, uid2, uid3);
-INSERT INTO tableC VALUES (3, 'foobar', 5, 6, 7, 8, 9, 10);
+CREATE TABLE qp_misc_jiras.tableA (ssn INT, lastName VARCHAR, junk INT) DISTRIBUTED BY (ssn);
+CREATE TABLE qp_misc_jiras.tableB (id INT, lastName VARCHAR, moreJunk INT) DISTRIBUTED BY (id);
+INSERT INTO qp_misc_jiras.tablea VALUES (1, 'foo',2);
+INSERT INTO qp_misc_jiras.tableb VALUES (2, 'bar',4);
+CREATE TABLE qp_misc_jiras.tableC (uid1 INT, uid2 INT, uid3 INT) INHERITS (qp_misc_jiras.tableA, qp_misc_jiras.tableB) DISTRIBUTED BY (uid1, uid2, uid3);
+INSERT INTO qp_misc_jiras.tableC VALUES (3, 'foobar', 5, 6, 7, 8, 9, 10);
 
 -- Should display records from tableA and tableC.
-SELECT * FROM tableA ORDER BY ssn;
+SELECT * FROM qp_misc_jiras.tableA ORDER BY ssn;
 -- Should display records from tableB and tableC.
-SELECT * FROM tableB ORDER BY id;
+SELECT * FROM qp_misc_jiras.tableB ORDER BY id;
 -- Should display only records from tableC.
-SELECT * FROM tableC;
+SELECT * FROM qp_misc_jiras.tableC;
 
 
-CREATE TABLE tableD (a INT, b INT, c INT) DISTRIBUTED BY (a);
-INSERT INTO tableD VALUES (11, 12, 13);
-CREATE TABLE tableE (x INT) INHERITS (tableA, tableD) DISTRIBUTED BY (x);
-INSERT INTO tableE VALUES (1,'foo', -2, 11, 12, -13, 14);
+CREATE TABLE qp_misc_jiras.tableD (a INT, b INT, c INT) DISTRIBUTED BY (a);
+INSERT INTO qp_misc_jiras.tableD VALUES (11, 12, 13);
+CREATE TABLE qp_misc_jiras.tableE (x INT) INHERITS (qp_misc_jiras.tableA, qp_misc_jiras.tableD) DISTRIBUTED BY (x);
+INSERT INTO qp_misc_jiras.tableE VALUES (1,'foo', -2, 11, 12, -13, 14);
 -- Should display records from tableD and tableE.
-SELECT * FROM tableD ORDER BY a, c;
+SELECT * FROM qp_misc_jiras.tableD ORDER BY a, c;
 -- Should display records from only table E.
-SELECT * FROM tableE;
+SELECT * FROM qp_misc_jiras.tableE;
 -- Should display records from tableA, tableC, and tableE.
-SELECT * FROM tableA ORDER BY ssn, junk;
+SELECT * FROM qp_misc_jiras.tableA ORDER BY ssn, junk;
 
 
-CREATE TABLE tableAA (ssn INT, lastName VARCHAR, junk INT) DISTRIBUTED randomly;
-CREATE TABLE tableBB (id INT, lastName VARCHAR, moreJunk INT) DISTRIBUTED randomly;
-INSERT INTO tableAA VALUES (1, 'foo',2);
-INSERT INTO tableBB VALUES (2, 'bar',4);
-CREATE TABLE tableCC (uid1 INT, uid2 INT, uid3 INT) INHERITS (tableAA, tableBB) DISTRIBUTED randomly;
-INSERT INTO tableCC VALUES (3, 'foobar', 5, 6, 7, 8, 9, 10);
+CREATE TABLE qp_misc_jiras.tableAA (ssn INT, lastName VARCHAR, junk INT) DISTRIBUTED randomly;
+CREATE TABLE qp_misc_jiras.tableBB (id INT, lastName VARCHAR, moreJunk INT) DISTRIBUTED randomly;
+INSERT INTO qp_misc_jiras.tableAA VALUES (1, 'foo',2);
+INSERT INTO qp_misc_jiras.tableBB VALUES (2, 'bar',4);
+CREATE TABLE qp_misc_jiras.tableCC (uid1 INT, uid2 INT, uid3 INT) INHERITS (qp_misc_jiras.tableAA, qp_misc_jiras.tableBB) DISTRIBUTED randomly;
+INSERT INTO qp_misc_jiras.tableCC VALUES (3, 'foobar', 5, 6, 7, 8, 9, 10);
 
 -- Should display records from tableAA and tableCC.
-SELECT * FROM tableAA ORDER BY ssn, junk;
+SELECT * FROM qp_misc_jiras.tableAA ORDER BY ssn, junk;
 -- Should display records from tableBB and tableCC.
-SELECT * FROM tableBB ORDER BY id, moreJunk;
+SELECT * FROM qp_misc_jiras.tableBB ORDER BY id, moreJunk;
 -- Should display records from only tableCC.
-SELECT * FROM tableCC;
+SELECT * FROM qp_misc_jiras.tableCC;
 
 
 -- --------------------------------------------------------------------------------------
@@ -2214,32 +1897,32 @@ SELECT * FROM tableCC;
 
 
 -- start_ignore
-DROP TABLE IF EXISTS inet_ip_pairs CASCADE;
+DROP TABLE IF EXISTS qp_misc_jiras.inet_ip_pairs CASCADE;
 set statement_timeout=0;
 set gp_interconnect_setup_timeout=7200;
 -- end_ignore
 
 
-CREATE TABLE inet_ip_pairs (saddr inet, daddr inet, instance_count int8);
+CREATE TABLE qp_misc_jiras.inet_ip_pairs (saddr inet, daddr inet, instance_count int8);
 SELECT * FROM pg_indexes WHERE tablename='inet_ip_pairs';
-INSERT INTO inet_ip_pairs (saddr) SELECT (i%201 || '.' || i%11 || '.' || i%11 || '.' || i%100)::inet FROM generate_series(1,1000000) i;
+INSERT INTO qp_misc_jiras.inet_ip_pairs (saddr) SELECT (i%201 || '.' || i%11 || '.' || i%11 || '.' || i%100)::inet FROM generate_series(1,1000000) i;
 
 
 -- --------------------------------------------------------
 -- MPP-6870: CREATE INDEX caused Out-Of-Memory problem
 -- --------------------------------------------------------
-CREATE INDEX  inet_ip_pairs_idx1 ON  inet_ip_pairs (saddr);
+CREATE INDEX  inet_ip_pairs_idx1 ON  qp_misc_jiras.inet_ip_pairs (saddr);
 SELECT * FROM pg_indexes WHERE tablename='inet_ip_pairs';
 
 
 -- --------------------------------------------------------
 -- Data should be evenly distributed to multiple segments?
 -- --------------------------------------------------------
-SELECT gp_segment_id,count(*) FROM inet_ip_pairs GROUP BY 1;
+SELECT gp_segment_id,count(*) FROM qp_misc_jiras.inet_ip_pairs GROUP BY 1;
 
 
 -- start_ignore
-DROP TABLE IF EXISTS inet_ip_pairs CASCADE;
+DROP TABLE IF EXISTS qp_misc_jiras.inet_ip_pairs CASCADE;
 -- end_ignore
 
 -- --------------------------------------------------------------------------------------
@@ -2624,7 +2307,10 @@ DROP FUNCTION qp_misc_jiras.mpp5032_func();
 drop table utable cascade;
 -- end_ignore
 
-create table utable (
+reset statement_timeout;
+set statement_mem = '512MB';
+
+create table qp_misc_jiras.utable (
     tstart timestamp,
     tfinish timestamp,
     utxt text,
@@ -2652,14 +2338,14 @@ from
 			        then unum 
 			        else 0 
 			        end
-			from utable
+			from qp_misc_jiras.utable
 		) x(tstart, utxt, unum)
 		
 		group by 1, 2
 	) y(period, utxt, usum);
 
 
-insert into utable values
+insert into qp_misc_jiras.utable values
     (timestamp '2009-05-01 01:01:10', timestamp '2009-05-01 02:01:10', 'a', 1.0),
     (timestamp '2009-05-01 02:01:10', timestamp '2009-05-01 01:01:10', 'a', 1.0),
     (timestamp '2009-05-01 02:01:10', timestamp '2009-05-01 03:01:10', 'a', 1.0),
@@ -2669,6 +2355,8 @@ insert into utable values
 
 
 -- This works.
+
+reset statement_mem;
 
 select 
     period::date,
@@ -2691,7 +2379,7 @@ group by 1;
 
 
 -- start_ignore
-drop table utable cascade;
+drop table qp_misc_jiras.utable cascade;
 -- end_ignore
 
 -- start_ignore
@@ -2711,17 +2399,17 @@ drop table utable cascade;
 
 
 -- start_ignore
-drop table foo_6325;
-drop table bar_6325;
+drop table qp_misc_jiras.foo_6325;
+drop table qp_misc_jiras.bar_6325;
 -- end_ignore
 
 
-CREATE TABLE foo_6325 (
+CREATE TABLE qp_misc_jiras.foo_6325 (
   foo_6325_attr text
 )
 DISTRIBUTED BY (foo_6325_attr);
 
-CREATE TABLE bar_6325 (
+CREATE TABLE qp_misc_jiras.bar_6325 (
   bar_6325_attr text
 )
 DISTRIBUTED RANDOMLY;
@@ -2732,15 +2420,15 @@ explain
 select  t1.bar_6325_attr::int, t1.foo_6325_attr 
 from (
 	select c.bar_6325_attr::int, a.foo_6325_attr
-	from foo_6325 a, bar_6325 c
+	from qp_misc_jiras.foo_6325 a, qp_misc_jiras.bar_6325 c
 	group by 1,2
      ) as t1 
 group by 1, 2;
 
 
 -- start_ignore
-drop table foo_6325;
-drop table bar_6325;
+drop table qp_misc_jiras.foo_6325;
+drop table qp_misc_jiras.bar_6325;
 DROP TABLE qp_misc_jiras.abc_mpp8621;
 -- end_ignore
 
@@ -2950,26 +2638,26 @@ insert into qp_misc_jiras.mpp9706aoc select i from generate_series(1, 100) i;
 
 select * from pg_catalog.get_ao_distribution('qp_misc_jiras.mpp9706ao'::regclass) order by 1 limit 2;
 select * from pg_catalog.get_ao_distribution('qp_misc_jiras.mpp9706aoc'::regclass) order by 1 limit 2;
-create table test_1 (a int, b int, c int) with (appendonly=true, orientation=column,compresslevel=0,blocksize=32768,checksum=false);
-insert into test_1 values (1,1,2);
-insert into test_1 values (1,1,3);
-insert into test_1 values (1,1,4);
-select count(*) from test_1;
+create table qp_misc_jiras.test_1 (a int, b int, c int) with (appendonly=true, orientation=column,compresslevel=0,blocksize=32768,checksum=false);
+insert into qp_misc_jiras.test_1 values (1,1,2);
+insert into qp_misc_jiras.test_1 values (1,1,3);
+insert into qp_misc_jiras.test_1 values (1,1,4);
+select count(*) from qp_misc_jiras.test_1;
 set Debug_column_store_use_new_segment_filename_format=on;
-select count(*) from test_1;
+select count(*) from qp_misc_jiras.test_1;
 set Debug_column_store_use_new_segment_filename_format=off;
-alter table test_1 set distributed by (c);
+alter table qp_misc_jiras.test_1 set distributed by (c);
 set Debug_column_store_use_new_segment_filename_format=off;
 set Debug_column_store_use_new_segment_filename_format=on;
-select count(*) from test_1;
-drop table test_1;
-create table bmap2 (a varchar, b varchar);
-insert into bmap2 values ('1', NULL);
-create index bmap2_index on bmap2 using bitmap (a, b);
-create table badbitmapindex (x int, y int, z int);
-insert into badbitmapindex values (0,0,0);
-insert into badbitmapindex values (0,0,NULL);
-create index badbitmapindex1 on badbitmapindex using bitmap(y,z);
+select count(*) from qp_misc_jiras.test_1;
+drop table qp_misc_jiras.test_1;
+create table qp_misc_jiras.bmap2 (a varchar, b varchar);
+insert into qp_misc_jiras.bmap2 values ('1', NULL);
+create index bmap2_index on qp_misc_jiras.bmap2 using bitmap (a, b);
+create table qp_misc_jiras.badbitmapindex (x int, y int, z int);
+insert into qp_misc_jiras.badbitmapindex values (0,0,0);
+insert into qp_misc_jiras.badbitmapindex values (0,0,NULL);
+create index badbitmapindex1 on qp_misc_jiras.badbitmapindex using bitmap(y,z);
 analyze badbitmapindex;
 --explain select * from badbitmapindex where y = 0 and z = 0;
 insert into badbitmapindex select generate_series(1,100*500);
@@ -2978,8 +2666,8 @@ analyze badbitmapindex;
 select * from badbitmapindex where y = 0 and z = 0;
 drop index badbitmapindex1;
 drop index bmap2_index;
-drop table badbitmapindex;
-drop table bmap2;
+drop table qp_misc_jiras.badbitmapindex;
+drop table qp_misc_jiras.bmap2;
 -- start_ignore
 -- --------------------------------------------------------------------------
 -- QA-1203:
@@ -2990,7 +2678,7 @@ drop table bmap2;
 -- end_ignore
 
 
-CREATE TABLE execution_table (
+CREATE TABLE qp_misc_jiras.execution_table (
  id integer,
  status integer,
  execution_id integer
@@ -2999,32 +2687,32 @@ DISTRIBUTED BY (id);
 
 INSERT INTO execution_table SELECT * from generate_series(1, 1000000) i;
 
-CREATE TABLE execution_t2 AS
-SELECT id, execution_id, status FROM execution_table
+CREATE TABLE qp_misc_jiras.execution_t2 AS
+SELECT id, execution_id, status FROM qp_misc_jiras.execution_table
 DISTRIBUTED BY (id);
 
-CREATE INDEX status_idx ON execution_table USING bitmap (status);
+CREATE INDEX status_idx ON qp_misc_jiras.execution_table USING bitmap (status);
 
-SELECT status, count(*) FROM execution_table WHERE status = 1 group by status; -- correct: one line
+SELECT status, count(*) FROM qp_misc_jiras.execution_table WHERE status = 1 group by status; -- correct: one line
 
-UPDATE execution_table SET EXECUTION_ID = execution_t2.EXECUTION_ID FROM execution_t2 WHERE execution_table.id = execution_t2.id;
+UPDATE qp_misc_jiras.execution_table SET EXECUTION_ID = execution_t2.EXECUTION_ID FROM qp_misc_jiras.execution_t2 WHERE execution_table.id = execution_t2.id;
 
-SELECT status, count(*) FROM execution_table WHERE status = 1 group by status; -- correct: one line
-Alter table execution_table set distributed by (status, execution_id);
-Alter table execution_table set distributed by (status);
+SELECT status, count(*) FROM qp_misc_jiras.execution_table WHERE status = 1 group by status; -- correct: one line
+Alter table qp_misc_jiras.execution_table set distributed by (status, execution_id);
+Alter table qp_misc_jiras.execution_table set distributed by (status);
 
-VACUUM FULL execution_table; -- test VACUUM FULL, gives wrong results before the fix
-Alter table execution_table set distributed by (status);
-Alter table execution_t2 set distributed by (execution_id);
-Alter table execution_table set distributed by (status, execution_id);
-Alter table execution_table set distributed by (execution_id);
-Alter table execution_table set distributed by (id,execution_id);
+VACUUM FULL qp_misc_jiras.execution_table; -- test VACUUM FULL, gives wrong results before the fix
+Alter table qp_misc_jiras.execution_table set distributed by (status);
+Alter table qp_misc_jiras.execution_t2 set distributed by (execution_id);
+Alter table qp_misc_jiras.execution_table set distributed by (status, execution_id);
+Alter table qp_misc_jiras.execution_table set distributed by (execution_id);
+Alter table qp_misc_jiras.execution_table set distributed by (id,execution_id);
 
 
-SELECT status, count(*) FROM execution_table WHERE status = 1 group by status;
+SELECT status, count(*) FROM qp_misc_jiras.execution_table WHERE status = 1 group by status;
 set statement_timeout=60;
 
-Create index id_idx on execution_table using bitmap (id, execution_id);
+Create index id_idx on qp_misc_jiras.execution_table using bitmap (id, execution_id);
 set statement_timeout=0;
 Create table qp_misc_jiras.abc_mpp9083 (a int, b int);
 set statement_timeout=20;
@@ -3036,7 +2724,7 @@ DROP TABLE execution_t2;
 
 set gp_debug_linger=3;
 
-CREATE TABLE ir_voice_sms_and_data (
+CREATE TABLE qp_misc_jiras.ir_voice_sms_and_data (
     imsi_number character varying(35),
     ir_call_country_name character varying(35),
     partner_operator_id character varying(15),
@@ -3060,10 +2748,10 @@ then 'MO' else 'foo' end
 case when ir_call_type_group_code in ('H', 'VH', 'PCB') then 'Thailland'
 else 'Unidentify' end
 ;
-DROP TABLE ir_voice_sms_and_data;
+DROP TABLE qp_misc_jiras.ir_voice_sms_and_data;
 \echo '-- start_ignore'
-drop table if exists x cascade;
-drop table if exists r cascade;
+drop table if exists qp_misc_jiras.x cascade;
+drop table if exists qp_misc_jiras.r cascade;
 \echo '-- end_ignore'
 create table qp_misc_jiras.x (a int, b int) distributed by (a);
 
@@ -3117,7 +2805,7 @@ drop table if exists qp_misc_jiras.r cascade;
 CREATE LANGUAGE plpgsql;
 -- end_ignore
 
-CREATE TABLE test_trig(id int, aaa text) DISTRIBUTED BY (id);
+CREATE TABLE qp_misc_jiras.test_trig(id int, aaa text) DISTRIBUTED BY (id);
 
 CREATE OR REPLACE FUNCTION fn_trig() RETURNS TRIGGER LANGUAGE plpgsql AS $$
 BEGIN
@@ -3130,21 +2818,21 @@ $$;
 
 
 CREATE TRIGGER test_trig_1
-BEFORE INSERT OR UPDATE ON test_trig
+BEFORE INSERT OR UPDATE ON qp_misc_jiras.test_trig
 FOR EACH ROW
     EXECUTE PROCEDURE fn_trig();
 
-INSERT INTO test_trig VALUES (1, 'aaa');
-SELECT * FROM test_trig;
+INSERT INTO qp_misc_jiras.test_trig VALUES (1, 'aaa');
+SELECT * FROM qp_misc_jiras.test_trig;
 
-UPDATE test_trig SET id = id;
-SELECT * FROM test_trig;
-DROP TABLE test_trig;
+UPDATE qp_misc_jiras.test_trig SET id = id;
+SELECT * FROM qp_misc_jiras.test_trig;
+DROP TABLE qp_misc_jiras.test_trig;
 DROP FUNCTION fn_trig();
 
 set gp_select_invisible=false;
 
-create table tbl1_mpp_11257 (
+create table qp_misc_jiras.tbl1_mpp_11257 (
  id            bigint,
 partition_key timestamp,
 distribution_key bigint not null,
@@ -3158,7 +2846,7 @@ partition d_2010_09_28 start (date '2010-09-28') end (date '2010-09-29')
 );
 select relname, attrnums as distribution_attributes from gp_distribution_policy p, pg_class c where p.localoid = c.oid and relname like 'tbl1_mpp_11257%' ;
 -- start_ignore
-alter table tbl1_mpp_11257 split default partition
+alter table qp_misc_jiras.tbl1_mpp_11257 split default partition
 start (date '2010-09-27' )
 end (date '2010-09-28')
 into (partition d_2010_09_27, partition default_partition);
@@ -3167,7 +2855,7 @@ select relname, attrnums as distribution_attributes from gp_distribution_policy 
 
 
 
-create table tbl2_mpp_11257 (
+create table qp_misc_jiras.tbl2_mpp_11257 (
 a int,
 b int,
 c int,
@@ -3179,53 +2867,53 @@ partition by range (b)
  default partition default_partition,
 partition p1 start (1) end (2)
  );
-insert into tbl2_mpp_11257 values(1,2,3);
-select * from tbl2_mpp_11257;
-delete from tbl2_mpp_11257 where a=1 and b=2 and c=3;
-select * from tbl2_mpp_11257;
-insert into tbl2_mpp_11257 values(1,2,3); 
+insert into qp_misc_jiras.tbl2_mpp_11257 values(1,2,3);
+select * from qp_misc_jiras.tbl2_mpp_11257;
+delete from qp_misc_jiras.tbl2_mpp_11257 where a=1 and b=2 and c=3;
+select * from qp_misc_jiras.tbl2_mpp_11257;
+insert into qp_misc_jiras.tbl2_mpp_11257 values(1,2,3); 
 select relname, attrnums as distribution_attributes from gp_distribution_policy p, pg_class c where p.localoid = c.oid and relname like 'tbl2_mpp_11257%' ;
 
 -- start_ignore
-alter table tbl2_mpp_11257 split default partition
+alter table qp_misc_jiras.tbl2_mpp_11257 split default partition
 start (3)
 end (4)
 into (partition p2, partition default_partition);
 -- end_ignore
 select relname, attrnums as distribution_attributes from gp_distribution_policy p, pg_class c where p.localoid = c.oid and relname like 'tbl2_mpp_11257%' ;
 
-delete from tbl2_mpp_11257 where a=1 and b=2 and c=3;
-select * from tbl2_mpp_11257;
+delete from qp_misc_jiras.tbl2_mpp_11257 where a=1 and b=2 and c=3;
+select * from qp_misc_jiras.tbl2_mpp_11257;
 
-drop table tbl1_mpp_11257;
-drop table tbl2_mpp_11257;
+drop table qp_misc_jiras.tbl1_mpp_11257;
+drop table qp_misc_jiras.tbl2_mpp_11257;
 set enable_seqscan=off;
 --
 -- Heap table. TidScan should be used.
 --
-drop table if exists test_heap;
-create table test_heap (i int, j int);
-insert into test_heap values (0, 0);
-explain select  * from test_heap where ctid='(0,1)' and gp_segment_id >= 0;
-select  * from test_heap where ctid='(0,1)' and gp_segment_id >= 0;
+drop table if exists qp_misc_jiras.test_heap;
+create table qp_misc_jiras.test_heap (i int, j int);
+insert into qp_misc_jiras.test_heap values (0, 0);
+explain select  * from qp_misc_jiras.test_heap where ctid='(0,1)' and gp_segment_id >= 0;
+select  * from qp_misc_jiras.test_heap where ctid='(0,1)' and gp_segment_id >= 0;
 
 --
 -- AO table. TidScan should not be used.
 --
-drop table if exists test_ao;
-create table test_ao (i int, j int) with (appendonly=true);
-insert into test_ao values (0, 0);
-explain select  * from test_ao where ctid='(33554432,32769)' and gp_segment_id >= 0;
-select  * from test_ao where ctid='(33554432,32769)' and gp_segment_id >= 0;
+drop table if exists qp_misc_jiras.test_ao;
+create table qp_misc_jiras.test_ao (i int, j int) with (appendonly=true);
+insert into qp_misc_jiras.test_ao values (0, 0);
+explain select  * from qp_misc_jiras.test_ao where ctid='(33554432,32769)' and gp_segment_id >= 0;
+select  * from qp_misc_jiras.test_ao where ctid='(33554432,32769)' and gp_segment_id >= 0;
 
 --
 -- CO table. TidScan should not be used.
 --
-drop table if exists test_co;
-create table test_co (i int, j int) with (appendonly=true, orientation=column);
-insert into test_co values (0, 0);
-explain select  * from test_co where ctid='(33554432,32769)' and gp_segment_id >= 0;
-select  * from test_co where ctid='(33554432,32769)' and gp_segment_id >= 0;
+drop table if exists qp_misc_jiras.test_co;
+create table qp_misc_jiras.test_co (i int, j int) with (appendonly=true, orientation=column);
+insert into qp_misc_jiras.test_co values (0, 0);
+explain select  * from qp_misc_jiras.test_co where ctid='(33554432,32769)' and gp_segment_id >= 0;
+select  * from qp_misc_jiras.test_co where ctid='(33554432,32769)' and gp_segment_id >= 0;
 -- start_ignore
 -- This is to verify MPP-10856: test gp_enable_explain_allstat 
 -- end_ignore
@@ -3308,21 +2996,21 @@ drop schema schema3 cascade;
 	output should be fine.
 	*/
 
-drop table if exists r;
-drop table if exists s;
+drop table if exists qp_misc_jiras.r;
+drop table if exists qp_misc_jiras.s;
 -- end_ignore
 
-create table r(a int, b int);
-insert into r select generate_series(1,1000), generate_series(1,1000);
-create table s(a int, b int);
-insert into s select generate_series(1,1000), generate_series(1,1000);
+create table qp_misc_jiras.r(a int, b int);
+insert into qp_misc_jiras.r select generate_series(1,1000), generate_series(1,1000);
+create table qp_misc_jiras.s(a int, b int);
+insert into qp_misc_jiras.s select generate_series(1,1000), generate_series(1,1000);
 analyze;
-explain select * from r;
-explain analyze select * from r,s where r.a=s.b;
-drop table r;
-drop table s;
+explain select * from qp_misc_jiras.r;
+explain analyze select * from qp_misc_jiras.r,qp_misc_jiras.s where r.a=s.b;
+drop table qp_misc_jiras.r;
+drop table qp_misc_jiras.s;
 -- COPY command to return proper error message when extra data in the file
-create table eloginfo0118
+create table qp_misc_jiras.eloginfo0118
   (
     sev          text,
     msg          text,
@@ -3331,7 +3019,7 @@ create table eloginfo0118
 )
 distributed by (sev);
 
-create table eloginfo0118_int
+create table qp_misc_jiras.eloginfo0118_int
   (
     id           int,
     sev          text,
@@ -3341,8 +3029,8 @@ create table eloginfo0118_int
 )
 distributed by (id);
 
-drop table eloginfo0118;
-drop table eloginfo0118_int;
+drop table qp_misc_jiras.eloginfo0118;
+drop table qp_misc_jiras.eloginfo0118_int;
 --to_date had issues when there were padding(space) in front of the string
 
 select to_date ('20010101','YYYYMMDD');
@@ -3428,30 +3116,30 @@ select * from qp_misc_jiras.mpp13879_2;
 select a, max(a) over (order by a range between current row and 2 following) as max from qp_misc_jiras.mpp13879_2;
 drop table qp_misc_jiras.mpp13879_1;
 drop table qp_misc_jiras.mpp13879_2;
-drop table if exists esc176_1;
-create table esc176_1 (id integer, seq integer, val double precision, clickdate timestamp without time zone) distributed by (id);
-insert into esc176_1 values (1,1,0.2,CURRENT_TIMESTAMP);
-insert into esc176_1 values (1,2,0.1,CURRENT_TIMESTAMP);
-insert into esc176_1 values (1,3,0.5,CURRENT_TIMESTAMP);
-insert into esc176_1 values (1,4,0.7,CURRENT_TIMESTAMP);
-select id, seq, sum (val) over (partition by id order by clickdate range between interval '0 seconds' following and interval '1000 seconds' following) from esc176_1;
-select id, seq, sum (val) over (partition by id order by clickdate range between interval '0 seconds' preceding and interval '1000 seconds' following) from esc176_1;
-select id, seq, sum(val) over (partition by id order by seq::numeric range between 0 following and 10 following), val from esc176_1;
-select id, seq, sum(val) over (partition by id order by seq::numeric range between 10 preceding and 0 preceding), val from esc176_1;
-insert into esc176_1 values (1,9,0.3,CURRENT_TIMESTAMP);
-insert into esc176_1 values (1,10,0.4,CURRENT_TIMESTAMP);
-insert into esc176_1 values (1,11,0.6, CURRENT_TIMESTAMP);
-insert into esc176_1 select * from esc176_1;
-insert into esc176_1 select * from esc176_1;
-insert into esc176_1 select * from esc176_1;
-insert into esc176_1 values (1,9,0.3, CURRENT_TIMESTAMP);
-insert into esc176_1 values (1,10,0.4,CURRENT_TIMESTAMP);
-insert into esc176_1 values (1,11,0.6,CURRENT_TIMESTAMP);
-select id, seq, sum (val) over (partition by id order by clickdate range between interval '0 seconds' following and interval '1000 seconds' following) from esc176_1;
-select id, seq, sum (val) over (partition by id order by clickdate range between interval '0 seconds' preceding and interval '1000 seconds' following) from esc176_1;
-select id, seq, sum(val) over (partition by id order by seq::numeric range between 0 following and 10 following), val from esc176_1;
-select id, seq, sum(val) over (partition by id order by seq::numeric range between 10 preceding and 0 preceding), val from esc176_1;
-drop table esc176_1;
+drop table if exists qp_misc_jiras.esc176_1;
+create table qp_misc_jiras.esc176_1 (id integer, seq integer, val double precision, clickdate timestamp without time zone) distributed by (id);
+insert into qp_misc_jiras.esc176_1 values (1,1,0.2,CURRENT_TIMESTAMP);
+insert into qp_misc_jiras.esc176_1 values (1,2,0.1,CURRENT_TIMESTAMP);
+insert into qp_misc_jiras.esc176_1 values (1,3,0.5,CURRENT_TIMESTAMP);
+insert into qp_misc_jiras.esc176_1 values (1,4,0.7,CURRENT_TIMESTAMP);
+select id, seq, sum (val) over (partition by id order by clickdate range between interval '0 seconds' following and interval '1000 seconds' following) from qp_misc_jiras.esc176_1;
+select id, seq, sum (val) over (partition by id order by clickdate range between interval '0 seconds' preceding and interval '1000 seconds' following) from qp_misc_jiras.esc176_1;
+select id, seq, sum(val) over (partition by id order by seq::numeric range between 0 following and 10 following), val from qp_misc_jiras.esc176_1;
+select id, seq, sum(val) over (partition by id order by seq::numeric range between 10 preceding and 0 preceding), val from qp_misc_jiras.esc176_1;
+insert into qp_misc_jiras.esc176_1 values (1,9,0.3,CURRENT_TIMESTAMP);
+insert into qp_misc_jiras.esc176_1 values (1,10,0.4,CURRENT_TIMESTAMP);
+insert into qp_misc_jiras.esc176_1 values (1,11,0.6, CURRENT_TIMESTAMP);
+insert into qp_misc_jiras.esc176_1 select * from esc176_1;
+insert into qp_misc_jiras.esc176_1 select * from esc176_1;
+insert into qp_misc_jiras.esc176_1 select * from esc176_1;
+insert into qp_misc_jiras.esc176_1 values (1,9,0.3, CURRENT_TIMESTAMP);
+insert into qp_misc_jiras.esc176_1 values (1,10,0.4,CURRENT_TIMESTAMP);
+insert into qp_misc_jiras.esc176_1 values (1,11,0.6,CURRENT_TIMESTAMP);
+select id, seq, sum (val) over (partition by id order by clickdate range between interval '0 seconds' following and interval '1000 seconds' following) from qp_misc_jiras.esc176_1;
+select id, seq, sum (val) over (partition by id order by clickdate range between interval '0 seconds' preceding and interval '1000 seconds' following) from qp_misc_jiras.esc176_1;
+select id, seq, sum(val) over (partition by id order by seq::numeric range between 0 following and 10 following), val from qp_misc_jiras.esc176_1;
+select id, seq, sum(val) over (partition by id order by seq::numeric range between 10 preceding and 0 preceding), val from qp_misc_jiras.esc176_1;
+drop table qp_misc_jiras.esc176_1;
 -- start_ignore
 drop table if exists qp_misc_jiras.mpp13491_h;
 drop table if exists qp_misc_jiras.mpp13491_aocol;

@@ -568,7 +568,7 @@ drop table mpp4105_sandbox_gp.ip_geo;
 drop schema mpp4105_sdc_stage;
 drop schema mpp4105_sandbox_gp;
 set enable_nestloop=on;
-CREATE TABLE satelliteupdatelog (
+CREATE TABLE qp_misc_jiras.satelliteupdatelog (
     id integer NOT NULL,
     "type" character varying NOT NULL,
     "action" character varying NOT NULL,
@@ -605,7 +605,7 @@ NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "satelliteupda
 ALTER TABLE ONLY satelliteupdatelogkey ADD CONSTRAINT satelliteupdatelogkey_idsatelliteupdatelog_fk FOREIGN KEY (idsatelliteupdatelog) REFERENCES satelliteupdatelog(id);
 WARNING:  Referential integrity (FOREIGN KEY) constraints are not supported in Greenplum Database, will not be enforced.
 ------------
-CREATE TABLE satellite (
+CREATE TABLE qp_misc_jiras.satellite (
     id integer NOT NULL,
     name character varying NOT NULL,
     "domain" character varying NOT NULL,
@@ -623,7 +623,7 @@ CREATE SEQUENCE satellite_id_seq
 ALTER SEQUENCE satellite_id_seq OWNED BY satellite.id;
 ALTER TABLE satellite ALTER COLUMN id SET DEFAULT nextval('satellite_id_seq'::regclass);
 --------
-CREATE TABLE satelliteupdatelogserver (
+CREATE TABLE qp_misc_jiras.satelliteupdatelogserver (
     idsatelliteupdatelog integer NOT NULL,
     idsatellite integer NOT NULL,
     retrys integer NOT NULL,
@@ -654,12 +654,10 @@ ORDER BY s.scheduled;
 ----+--------+------+------------+-------
 (0 rows)
 
-drop table satelliteupdatelog cascade;
-NOTICE:  drop cascades to constraint satelliteupdatelogserver_idsatelliteupdatelog_fk on table satelliteupdatelogserver
-NOTICE:  drop cascades to constraint satelliteupdatelogkey_idsatelliteupdatelog_fk on table satelliteupdatelogkey
-drop table satelliteupdatelogkey cascade;
-drop table satellite cascade;
-drop table satelliteupdatelogserver cascade;
+drop table qp_misc_jiras.satelliteupdatelog cascade;
+drop table qp_misc_jiras.satelliteupdatelogkey cascade;
+drop table qp_misc_jiras.satellite cascade;
+drop table qp_misc_jiras.satelliteupdatelogserver cascade;
 create table qp_misc_jiras.mpp3183_t1 (i int);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'i' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
@@ -682,373 +680,6 @@ select i from (select i from qp_misc_jiras.mpp3183_t2 union all select i from qp
 drop table qp_misc_jiras.mpp3183_t1;
 drop table qp_misc_jiras.mpp3183_t2;
 drop table qp_misc_jiras.mpp3183_t3;
-CREATE TABLE deal_mwrk (
-    dw_snapshot_dttm timestamp(0) without time zone,
-    dw_batch_window_dt date,
-    dw_source_file_dttm timestamp(0) without time zone,
-    deal_id integer,
-    status character varying,
-    last_modified timestamp without time zone,
-    campaign character varying,
-    start_date character varying,
-    end_date character varying,
-    sales_stage_name character varying,
-    external_notes character varying,
-    user_id integer,
-    user2_id integer,
-    category_discount numeric,
-    print_discount numeric,
-    agency_discount numeric,
-    discount numeric,
-    reservation integer,
-    reservation_expiration date,
-    contact_id integer,
-    billing_notes character varying,
-    total_value numeric,
-    po_number character varying,
-    billing_term_id integer,
-    assistant_user_id integer,
-    agency_account_id integer,
-    advertiser_account_id integer,
-    state_id integer,
-    deal_submitted boolean,
-    deal_accepted boolean,
-    contract_submitted boolean,
-    contract_accepted boolean,
-    account_to_bill_id integer,
-    team_id integer,
-    currency_id integer,
-    tax_business_entity_id integer,
-    split_value1 character varying,
-    split_value2 character varying,
-    split_value3 character varying,
-    split_value4 character varying,
-    user_id1 integer,
-    user_id2 integer,
-    billing_profile_id integer
-) distributed randomly;
-explain analyze SELECT DISTINCT
-  dw_source_file_dttm AS begin_eff_dttm
-, COALESCE(
-    LEAD(dw_source_file_dttm, 1) OVER (
-      PARTITION BY deal_id
-          ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-    ) - CAST('1 second' AS INTERVAL)
-  , 'infinity'::timestamp(0)
-  ) AS eff_end_dttm
-, deal_id
-, status
-, last_modified
-, campaign
-, start_date
-, end_date
-, sales_stage_name
-, external_notes
-, user_id
-, user2_id
-, category_discount
-, print_discount
-, agency_discount
-, discount
-, discount
-, reservation
-, reservation_expiration
-, contact_id
-, billing_notes
-, total_value
-, po_number
-, billing_term_id
-, assistant_user_id
-, agency_account_id
-, advertiser_account_id
-, state_id
-, deal_submitted
-, deal_accepted
-, contract_submitted
-, contract_accepted
-, account_to_bill_id
-, team_id
-, currency_id
-, tax_business_entity_id
-, split_value1
-, split_value2
-, split_value3
-, split_value4
-, user_id1
-, user_id2
-, billing_profile_id
-FROM (
-  SELECT
-    *
-  FROM (
-    SELECT
-      *
-    , ROW_NUMBER() OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS row_number
-    , LAG(deal_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_deal_id
-    , LAG(status) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_status
-    , LAG(last_modified) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_last_modified
-    , LAG(campaign) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_campaign
-    , LAG(start_date) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_start_date
-    , LAG(end_date) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_end_date
-    , LAG(sales_stage_name) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_sales_stage_name
-    , LAG(external_notes) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_external_notes
-    , LAG(user_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_user_id
-    , LAG(user2_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_user2_id
-    , LAG(category_discount) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_category_discount
-    , LAG(print_discount) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_print_discount
-    , LAG(agency_discount) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_agency_discount
-    , LAG(discount) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_discount
-    , LAG(reservation) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_reservation
-    , LAG(reservation_expiration) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_reservation_expiration
-    , LAG(contact_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_contact_id
-    , LAG(billing_notes) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_billing_notes
-    , LAG(total_value) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_total_value
-    , LAG(po_number) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_po_number
-    , LAG(billing_term_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_billing_term_id
-    , LAG(assistant_user_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_assistant_user_id
-    , LAG(agency_account_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_agency_account_id
-    , LAG(advertiser_account_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_advertiser_account_id
-    , LAG(state_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_state_id
-    , LAG(deal_submitted) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_deal_submitted
-    , LAG(deal_accepted) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_deal_accepted
-    , LAG(contract_submitted) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_contract_submitted
-    , LAG(contract_accepted) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_contract_accepted
-    , LAG(account_to_bill_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_account_to_bill_id
-    , LAG(team_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_team_id
-    , LAG(currency_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_currency_id
-    , LAG(tax_business_entity_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_tax_business_entity_id
-    , LAG(split_value1) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_split_value1
-    , LAG(split_value2) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_split_value2
-    , LAG(split_value3) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_split_value3
-    , LAG(split_value4) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_split_value4
-    , LAG(user_id1) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_user_id1
-    , LAG(user_id2) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_user_id2
-    , LAG(billing_profile_id) OVER (
-        PARTITION BY deal_id
-            ORDER BY dw_source_file_dttm, dw_snapshot_dttm
-      ) AS lag_billing_profile_id
-    FROM
-      deal_mwrk
-  ) foo
-  WHERE
-    row_number = 1 OR
-    NOT (
-          (1 = 1)
-      AND (deal_id = lag_deal_id OR (deal_id IS NULL AND lag_deal_id IS NULL))
-      AND (status = lag_status OR (status IS NULL AND lag_status IS NULL))
-      AND (last_modified = lag_last_modified OR (last_modified IS NULL AND lag_last_modified IS NULL))
-      AND (campaign = lag_campaign OR (campaign IS NULL AND lag_campaign IS NULL))
-      AND (start_date = lag_start_date OR (start_date IS NULL AND lag_start_date IS NULL))
-      AND (end_date = lag_end_date OR (end_date IS NULL AND lag_end_date IS NULL))
-      AND (sales_stage_name = lag_sales_stage_name OR (sales_stage_name IS NULL AND lag_sales_stage_name IS NULL))
-      AND (external_notes = lag_external_notes OR (external_notes IS NULL AND lag_external_notes IS NULL))
-      AND (user_id = lag_user_id OR (user_id IS NULL AND lag_user_id IS NULL))
-      AND (user2_id = lag_user2_id OR (user2_id IS NULL AND lag_user2_id IS NULL))
-      AND (category_discount = lag_category_discount OR (category_discount IS NULL AND lag_category_discount IS NULL))
-      AND (print_discount = lag_print_discount OR (print_discount IS NULL AND lag_print_discount IS NULL))
-      AND (agency_discount = lag_agency_discount OR (agency_discount IS NULL AND lag_agency_discount IS NULL))
-      AND (discount = lag_discount OR (discount IS NULL AND lag_discount IS NULL))
-      AND (reservation = lag_reservation OR (reservation IS NULL AND lag_reservation IS NULL))
-      AND (reservation_expiration = lag_reservation_expiration OR (reservation_expiration IS NULL AND lag_reservation_expiration IS NULL))
-      AND (contact_id = lag_contact_id OR (contact_id IS NULL AND lag_contact_id IS NULL))
-      AND (billing_notes = lag_billing_notes OR (billing_notes IS NULL AND lag_billing_notes IS NULL))
-      AND (total_value = lag_total_value OR (total_value IS NULL AND lag_total_value IS NULL))
-      AND (po_number = lag_po_number OR (po_number IS NULL AND lag_po_number IS NULL))
-      AND (billing_term_id = lag_billing_term_id OR (billing_term_id IS NULL AND lag_billing_term_id IS NULL))
-      AND (assistant_user_id = lag_assistant_user_id OR (assistant_user_id IS NULL AND lag_assistant_user_id IS NULL))
-      AND (agency_account_id = lag_agency_account_id OR (agency_account_id IS NULL AND lag_agency_account_id IS NULL))
-      AND (advertiser_account_id = lag_advertiser_account_id OR (advertiser_account_id IS NULL AND lag_advertiser_account_id IS NULL))
-      AND (state_id = lag_state_id OR (state_id IS NULL AND lag_state_id IS NULL))
-      AND (deal_submitted = lag_deal_submitted OR (deal_submitted IS NULL AND lag_deal_submitted IS NULL))
-      AND (deal_accepted = lag_deal_accepted OR (deal_accepted IS NULL AND lag_deal_accepted IS NULL))
-      AND (contract_submitted = lag_contract_submitted OR (contract_submitted IS NULL AND lag_contract_submitted IS NULL))
-      AND (contract_accepted = lag_contract_accepted OR (contract_accepted IS NULL AND lag_contract_accepted IS NULL))
-      AND (account_to_bill_id = lag_account_to_bill_id OR (account_to_bill_id IS NULL AND lag_account_to_bill_id IS NULL))
-      AND (team_id = lag_team_id OR (team_id IS NULL AND lag_team_id IS NULL))
-      AND (currency_id = lag_currency_id OR (currency_id IS NULL AND lag_currency_id IS NULL))
-      AND (tax_business_entity_id = lag_tax_business_entity_id OR (tax_business_entity_id IS NULL AND lag_tax_business_entity_id IS NULL))
-      AND (split_value1 = lag_split_value1 OR (split_value1 IS NULL AND lag_split_value1 IS NULL))
-      AND (split_value2 = lag_split_value2 OR (split_value2 IS NULL AND lag_split_value2 IS NULL))
-      AND (split_value3 = lag_split_value3 OR (split_value3 IS NULL AND lag_split_value3 IS NULL))
-      AND (split_value4 = lag_split_value4 OR (split_value4 IS NULL AND lag_split_value4 IS NULL))
-      AND (user_id1 = lag_user_id1 OR (user_id1 IS NULL AND lag_user_id1 IS NULL))
-      AND (user_id2 = lag_user_id2 OR (user_id2 IS NULL AND lag_user_id2 IS NULL))
-      AND (billing_profile_id = lag_billing_profile_id OR (billing_profile_id IS NULL AND lag_billing_profile_id IS NULL
-))
-    )
-) bar
-;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         QUERY PLAN                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- Gather Motion 3:1  (slice3; segments: 3)  (cost=0.20..0.31 rows=0 width=644)
-   Merge Key: begin_eff_dttm, eff_end_dttm, deal_id, status, last_modified, campaign, start_date, end_date, sales_stage_name, external_notes, user_id, user2_id, category_discount, print_discount, agency_discount, discount, reservation, reservation_expiration, contact_id, billing_notes, total_value, po_number, billing_term_id, assistant_user_id, agency_account_id, advertiser_account_id, state_id, deal_submitted, deal_accepted, contract_submitted, contract_accepted, account_to_bill_id, team_id, currency_id, tax_business_entity_id, split_value1, split_value2, split_value3, split_value4, user_id1, user_id2, billing_profile_id
-   Rows out:  0 rows at destination with 6.006 ms to end, start offset by 1.956 ms.
-   ->  Unique  (cost=0.20..0.31 rows=0 width=644)
-         Group By: foo.dw_source_file_dttm, eff_end_dttm, foo.deal_id, foo.status, foo.last_modified, foo.campaign, foo.start_date, foo.end_date, foo.sales_stage_name, foo.external_notes, foo.user_id, foo.user2_id, foo.category_discount, foo.print_discount, foo.agency_discount, foo.discount, foo.discount, foo.reservation, foo.reservation_expiration, foo.contact_id, foo.billing_notes, foo.total_value, foo.po_number, foo.billing_term_id, foo.assistant_user_id, foo.agency_account_id, foo.advertiser_account_id, foo.state_id, foo.deal_submitted, foo.deal_accepted, foo.contract_submitted, foo.contract_accepted, foo.account_to_bill_id, foo.team_id, foo.currency_id, foo.tax_business_entity_id, foo.split_value1, foo.split_value2, foo.split_value3, foo.split_value4, foo.user_id1, foo.user_id2, foo.billing_profile_id
-         Rows out:  0 rows (seg0) with 0.744 ms to end, start offset by 6.712 ms.
-         ->  Sort  (cost=0.20..0.21 rows=1 width=644)
-               Sort Key (Distinct): foo.dw_source_file_dttm, eff_end_dttm, foo.deal_id, foo.status, foo.last_modified, foo.campaign, foo.start_date, foo.end_date, foo.sales_stage_name, foo.external_notes, foo.user_id, foo.user2_id, foo.category_discount, foo.print_discount, foo.agency_discount, foo.discount, foo.reservation, foo.reservation_expiration, foo.contact_id, foo.billing_notes, foo.total_value, foo.po_number, foo.billing_term_id, foo.assistant_user_id, foo.agency_account_id, foo.advertiser_account_id, foo.state_id, foo.deal_submitted, foo.deal_accepted, foo.contract_submitted, foo.contract_accepted, foo.account_to_bill_id, foo.team_id, foo.currency_id, foo.tax_business_entity_id, foo.split_value1, foo.split_value2, foo.split_value3, foo.split_value4, foo.user_id1, foo.user_id2, foo.billing_profile_id
-               Rows out:  0 rows (seg0) with 0.743 ms to end, start offset by 6.712 ms.
-               Executor memory:  74K bytes avg, 74K bytes max (seg0).
-               Work_mem used:  74K bytes avg, 74K bytes max (seg0). Workfile: (0 spilling, 0 reused)
-               ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=0.03..0.19 rows=1 width=644)
-                     Hash Key: foo.dw_source_file_dttm, eff_end_dttm, foo.deal_id, foo.status, foo.last_modified, foo.campaign, foo.start_date, foo.end_date, foo.sales_stage_name, foo.external_notes, foo.user_id, foo.user2_id, foo.category_discount, foo.print_discount, foo.agency_discount, foo.discount, foo.discount, foo.reservation, foo.reservation_expiration, foo.contact_id, foo.billing_notes, foo.total_value, foo.po_number, foo.billing_term_id, foo.assistant_user_id, foo.agency_account_id, foo.advertiser_account_id, foo.state_id, foo.deal_submitted, foo.deal_accepted, foo.contract_submitted, foo.contract_accepted, foo.account_to_bill_id, foo.team_id, foo.currency_id, foo.tax_business_entity_id, foo.split_value1, foo.split_value2, foo.split_value3, foo.split_value4, foo.user_id1, foo.user_id2, foo.billing_profile_id
-                     Rows out:  0 rows at destination (seg0) with 0.656 ms to end, start offset by 6.798 ms.
-                     ->  Window  (cost=0.03..0.17 rows=1 width=644)
-                           Partition By: foo.deal_id
-                           Order By: foo.dw_source_file_dttm, foo.dw_snapshot_dttm
-                           Rows out:  0 rows (seg0) with 0.554 ms to end, start offset by 6.714 ms.
-                           ->  Subquery Scan foo  (cost=0.03..0.16 rows=1 width=644)
-                                 Filter: row_number = 1 OR (deal_id <> lag_deal_id AND ((NOT deal_id IS NULL) OR (NOT lag_deal_id IS NULL))) OR (status::text <> lag_status::text AND ((NOT status IS NULL) OR (NOT lag_status IS NULL))) OR (last_modified <> lag_last_modified AND ((NOT last_modified IS NULL) OR (NOT lag_last_modified IS NULL))) OR (campaign::text <> lag_campaign::text AND ((NOT campaign IS NULL) OR (NOT lag_campaign IS NULL))) OR (start_date::text <> lag_start_date::text AND ((NOT start_date IS NULL) OR (NOT lag_start_date IS NULL))) OR (end_date::text <> lag_end_date::text AND ((NOT end_date IS NULL) OR (NOT lag_end_date IS NULL))) OR (sales_stage_name::text <> lag_sales_stage_name::text AND ((NOT sales_stage_name IS NULL) OR (NOT lag_sales_stage_name IS NULL))) OR (external_notes::text <> lag_external_notes::text AND ((NOT external_notes IS NULL) OR (NOT lag_external_notes IS NULL))) OR (user_id <> lag_user_id AND ((NOT user_id IS NULL) OR (NOT lag_user_id IS NULL))) OR (user2_id <> lag_user2_id AND ((NOT user2_id IS NULL) OR (NOT lag_user2_id IS NULL))) OR (category_discount <> lag_category_discount AND ((NOT category_discount IS NULL) OR (NOT lag_category_discount IS NULL))) OR (print_discount <> lag_print_discount AND ((NOT print_discount IS NULL) OR (NOT lag_print_discount IS NULL))) OR (agency_discount <> lag_agency_discount AND ((NOT agency_discount IS NULL) OR (NOT lag_agency_discount IS NULL))) OR (discount <> lag_discount AND ((NOT discount IS NULL) OR (NOT lag_discount IS NULL))) OR (reservation <> lag_reservation AND ((NOT reservation IS NULL) OR (NOT lag_reservation IS NULL))) OR (reservation_expiration <> lag_reservation_expiration AND ((NOT reservation_expiration IS NULL) OR (NOT lag_reservation_expiration IS NULL))) OR (contact_id <> lag_contact_id AND ((NOT contact_id IS NULL) OR (NOT lag_contact_id IS NULL))) OR (billing_notes::text <> lag_billing_notes::text AND ((NOT billing_notes IS NULL) OR (NOT lag_billing_notes IS NULL))) OR (total_value <> lag_total_value AND ((NOT total_value IS NULL) OR (NOT lag_total_value IS NULL))) OR (po_number::text <> lag_po_number::text AND ((NOT po_number IS NULL) OR (NOT lag_po_number IS NULL))) OR (billing_term_id <> lag_billing_term_id AND ((NOT billing_term_id IS NULL) OR (NOT lag_billing_term_id IS NULL))) OR (assistant_user_id <> lag_assistant_user_id AND ((NOT assistant_user_id IS NULL) OR (NOT lag_assistant_user_id IS NULL))) OR (agency_account_id <> lag_agency_account_id AND ((NOT agency_account_id IS NULL) OR (NOT lag_agency_account_id IS NULL))) OR (advertiser_account_id <> lag_advertiser_account_id AND ((NOT advertiser_account_id IS NULL) OR (NOT lag_advertiser_account_id IS NULL))) OR (state_id <> lag_state_id AND ((NOT state_id IS NULL) OR (NOT lag_state_id IS NULL))) OR (deal_submitted <> lag_deal_submitted AND ((NOT deal_submitted IS NULL) OR (NOT lag_deal_submitted IS NULL))) OR (deal_accepted <> lag_deal_accepted AND ((NOT deal_accepted IS NULL) OR (NOT lag_deal_accepted IS NULL))) OR (contract_submitted <> lag_contract_submitted AND ((NOT contract_submitted IS NULL) OR (NOT lag_contract_submitted IS NULL))) OR (contract_accepted <> lag_contract_accepted AND ((NOT contract_accepted IS NULL) OR (NOT lag_contract_accepted IS NULL))) OR (account_to_bill_id <> lag_account_to_bill_id AND ((NOT account_to_bill_id IS NULL) OR (NOT lag_account_to_bill_id IS NULL))) OR (team_id <> lag_team_id AND ((NOT team_id IS NULL) OR (NOT lag_team_id IS NULL))) OR (currency_id <> lag_currency_id AND ((NOT currency_id IS NULL) OR (NOT lag_currency_id IS NULL))) OR (tax_business_entity_id <> lag_tax_business_entity_id AND ((NOT tax_business_entity_id IS NULL) OR (NOT lag_tax_business_entity_id IS NULL))) OR (split_value1::text <> lag_split_value1::text AND ((NOT split_value1 IS NULL) OR (NOT lag_split_value1 IS NULL))) OR (split_value2::text <> lag_split_value2::text AND ((NOT split_value2 IS NULL) OR (NOT lag_split_value2 IS NULL))) OR (split_value3::text <> lag_split_value3::text AND ((NOT split_value3 IS NULL) OR (NOT lag_split_value3 IS NULL))) OR (split_value4::text <> lag_split_value4::text AND ((NOT split_value4 IS NULL) OR (NOT lag_split_value4 IS NULL))) OR (user_id1 <> lag_user_id1 AND ((NOT user_id1 IS NULL) OR (NOT lag_user_id1 IS NULL))) OR (user_id2 <> lag_user_id2 AND ((NOT user_id2 IS NULL) OR (NOT lag_user_id2 IS NULL))) OR (billing_profile_id <> lag_billing_profile_id AND ((NOT billing_profile_id IS NULL) OR (NOT lag_billing_profile_id IS NULL)))
-                                 Rows out:  0 rows (seg0) with 0.553 ms to end, start offset by 6.714 ms.
-                                 ->  Window  (cost=0.03..0.05 rows=1 width=648)
-                                       Partition By: deal_mwrk.deal_id
-                                       Order By (level 1): deal_mwrk.dw_source_file_dttm, deal_mwrk.dw_snapshot_dttm
-                                       Order By (level 2): deal_mwrk.dw_source_file_dttm
-                                       Rows out:  0 rows (seg0) with 0.552 ms to end, start offset by 6.715 ms.
-                                       ->  Sort  (cost=0.03..0.04 rows=1 width=648)
-                                             Sort Key: deal_mwrk.deal_id, deal_mwrk.dw_source_file_dttm, deal_mwrk.dw_snapshot_dttm
-                                             Rows out:  0 rows (seg0) with 0.548 ms to end, start offset by 6.716 ms.
-                                             Executor memory:  74K bytes avg, 74K bytes max (seg0).
-                                             Work_mem used:  74K bytes avg, 74K bytes max (seg0). Workfile: (0 spilling, 0 reused)
-                                             ->  Redistribute Motion 3:3  (slice1; segments: 3)  (cost=0.00..0.02 rows=1 width=648)
-                                                   Hash Key: deal_mwrk.deal_id
-                                                   Rows out:  0 rows at destination (seg0) with 0.468 ms to end, start offset by 6.795 ms.
-                                                   ->  Seq Scan on deal_mwrk  (cost=0.00..0.00 rows=1 width=648)
-                                                         Rows out:  0 rows (seg0) with 0.038 ms to end, start offset by 6.844 ms.
- Slice statistics:
-   (slice0)    Executor memory: 756K bytes.
-   (slice1)    Executor memory: 756K bytes avg x 3 workers, 756K bytes max (seg0).
-   (slice2)    Executor memory: 804K bytes avg x 3 workers, 804K bytes max (seg0).  Work_mem: 74K bytes max.
-   (slice3)    Executor memory: 788K bytes avg x 3 workers, 788K bytes max (seg0).  Work_mem: 74K bytes max.
- Statement statistics:
-   Memory used: 128000K bytes
- Settings:  enable_nestloop=on; optimizer=off
- Optimizer status: legacy query optimizer
- Total runtime: 8.127 ms
-(46 rows)
-
-drop table deal_mwrk;
 create table qp_misc_jiras.mpp5028_part_test (a int, b date,c text) 
 partition by range(b)
 (
@@ -2215,7 +1846,7 @@ select 'drop schema '||nspname||' cascade;' from pg_namespace where nspname like
 (1 row)
 
 -- end_ignore
-CREATE TABLE m_ccr_mthy_cr_nds_t00
+CREATE TABLE qp_misc_jiras.m_ccr_mthy_cr_nds_t00
 (
 cls_yymm date,
 plyno character(16),
@@ -2237,7 +1868,7 @@ udrtk_gu_arecd character(10)
 );
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'cls_yymm' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-CREATE TABLE m_ccr_cvr_nds_t99
+CREATE TABLE qp_misc_jiras.m_ccr_cvr_nds_t99
 (
 cls_yymm date,
 plyno character(16),
@@ -2262,7 +1893,7 @@ nds_lgb character(2)
 WITH (OIDS=FALSE);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'cls_yymm' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-CREATE TABLE ins_cr_nds_dt
+CREATE TABLE qp_misc_jiras.ins_cr_nds_dt
 (
 plyno character varying(16) NOT NULL, 
 ndsno character(4) NOT NULL, 
@@ -2295,7 +1926,7 @@ load_dthms timestamp(0) without time zone
 WITH (OIDS=FALSE);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'plyno' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-CREATE TABLE ins_cr_nds_mstr
+CREATE TABLE qp_misc_jiras.ins_cr_nds_mstr
 (
 plyno character varying(16) NOT NULL, 
 ndsno character(4) NOT NULL, 
@@ -2432,6 +2063,7 @@ WHERE T.SQ = 1
 (0 rows)
 
 drop table ins_cr_nds_dt, ins_cr_nds_mstr, m_ccr_cvr_nds_t99, m_ccr_mthy_cr_nds_t00;
+reset gp_select_invisible;
 create table qp_misc_jiras.mpp6448 (x "char");
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'x' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
@@ -2454,20 +2086,17 @@ explain select * from qp_misc_jiras.mpp6833_anl; -- should not hit cdbRelSize();
    ->  Append  (cost=0.00..2.00 rows=1 width=12)
          ->  Seq Scan on mpp6833_anl_1_prt_bb_1 mpp6833_anl  (cost=0.00..1.00 rows=1 width=12)
          ->  Seq Scan on mpp6833_anl_1_prt_bb_2 mpp6833_anl  (cost=0.00..1.00 rows=1 width=12)
- Settings:  enable_indexscan=off; enable_nestloop=on; enable_seqscan=off
+ Settings:  enable_indexscan=off; enable_nestloop=on; enable_seqscan=off; optimizer=off
  Optimizer status: legacy query optimizer
 (6 rows)
 
 select relname, reltuples, relpages from pg_class where relname like 'mpp6833_anl%'; -- should show relpages = 1.0
         relname         | reltuples | relpages 
 ------------------------+-----------+----------
- mpp6833_anl            |         0 |        0
- mpp6833_anl_1_prt_bb_1 |         0 |        0
  mpp6833_anl_1_prt_bb_1 |         0 |        1
- mpp6833_anl_1_prt_bb_2 |         0 |        0
  mpp6833_anl_1_prt_bb_2 |         0 |        1
  mpp6833_anl            |         0 |        1
-(6 rows)
+(3 rows)
 
 create table qp_misc_jiras.mpp6833_vac(a int, b int, c int) distributed by (a) partition by range (b) (partition bb start (0) end (2) every (1));
 NOTICE:  CREATE TABLE will create partition "mpp6833_vac_1_prt_bb_1" for table "mpp6833_vac"
@@ -2487,13 +2116,10 @@ explain select * from qp_misc_jiras.mpp6833_vac; -- should not hit cdbRelSize();
 select relname, reltuples, relpages from pg_class where relname like 'mpp6833_vac%'; -- should show relpages = 1.0
         relname         | reltuples | relpages 
 ------------------------+-----------+----------
- mpp6833_vac            |         0 |        0
- mpp6833_vac_1_prt_bb_1 |         0 |        0
  mpp6833_vac_1_prt_bb_1 |         0 |        1
- mpp6833_vac_1_prt_bb_2 |         0 |        0
  mpp6833_vac_1_prt_bb_2 |         0 |        1
  mpp6833_vac            |         0 |        1
-(6 rows)
+(3 rows)
 
 drop table qp_misc_jiras.mpp6833_anl;
 drop table qp_misc_jiras.mpp6833_vac;
@@ -2509,10 +2135,8 @@ left outer join pg_catalog.pg_attribute a on a.attrelid = c.oid and a.attnum in 
 WHERE c.relname ~ '^(foo)$';
  attrnums | attname | format_type | attnotnull | attnum | col_description 
 ----------+---------+-------------+------------+--------+-----------------
- {1}      | a       | integer     | f          |      1 | 
- {1}      | a       | integer     | f          |      1 | 
  {1}      | x       | integer     | f          |      1 | 
-(3 rows)
+(1 row)
 
 -- previously supported query
 drop table if exists bar;
@@ -3088,14 +2712,6 @@ HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sur
 Has OIDs: no
 Distributed by: (a)
 
-             Table "qp_misc_jiras.mpp6874"
- Column |  Type   | Modifiers | Storage  | Description 
---------+---------+-----------+----------+-------------
- a      | integer |           | plain    | 
- b      | text    |           | extended | 
-Has OIDs: no
-Distributed by: (a)
-
 insert into qp_misc_jiras.mpp6874 values ( generate_series(1,1000),'test_1');
 create index qp_misc_jiras.mpp6874_a on qp_misc_jiras.mpp6874 using bitmap(a);
 ERROR:  syntax error at or near "."
@@ -3110,25 +2726,9 @@ LINE 1: create index qp_misc_jiras.mpp6874_a on qp_misc_jiras.mpp687...
 Has OIDs: no
 Distributed by: (a)
 
-             Table "qp_misc_jiras.mpp6874"
- Column |  Type   | Modifiers | Storage  | Description 
---------+---------+-----------+----------+-------------
- a      | integer |           | plain    | 
- b      | text    |           | extended | 
-Has OIDs: no
-Distributed by: (a)
-
 drop index qp_misc_jiras.mpp6874_a;
 ERROR:  index "mpp6874_a" does not exist
 \d+ qp_misc_jiras.mpp6874
-             Table "qp_misc_jiras.mpp6874"
- Column |  Type   | Modifiers | Storage  | Description 
---------+---------+-----------+----------+-------------
- a      | integer |           | plain    | 
- b      | text    |           | extended | 
-Has OIDs: no
-Distributed by: (a)
-
              Table "qp_misc_jiras.mpp6874"
  Column |  Type   | Modifiers | Storage  | Description 
 --------+---------+-----------+----------+-------------
@@ -3196,7 +2796,7 @@ DROP TABLE IF EXISTS one_of_every_data_type;
 NOTICE:  table "one_of_every_data_type" does not exist, skipping
 -- end_ignore
 -- Create a column-oriented table.
-CREATE TABLE one_of_every_data_type (
+CREATE TABLE qp_misc_jiras.one_of_every_data_type (
     id BIGINT,
     lseg_col LSEG,
     serial_col SERIAL
@@ -3210,16 +2810,16 @@ CREATE FUNCTION TO_LSEG(TEXT) RETURNS LSEG AS
   $$
     SELECT lseg_in(textout($1))
   $$ LANGUAGE SQL;
-INSERT INTO one_of_every_data_type ( lseg_col)
+INSERT INTO qp_misc_jiras.one_of_every_data_type ( lseg_col)
  VALUES (
   TO_LSEG('((' || 1 || ', ' || 1 || '), (' || 1 + 1 || ', ' || 1 + 1 || '))')
   ) ;
-INSERT INTO one_of_every_data_type ( lseg_col)
+INSERT INTO qp_misc_jiras.one_of_every_data_type ( lseg_col)
  VALUES (
   TO_LSEG('((' || 1 || ', ' || 1 || '), (' || 1 + 1 || ', ' || 1 + 1 || '))')
   ) ;
 -- Retrieve data from the table.
-SELECT * FROM one_of_every_data_type ORDER BY id,serial_col;
+SELECT * FROM qp_misc_jiras.one_of_every_data_type ORDER BY id,serial_col;
  id |   lseg_col    | serial_col 
 ----+---------------+------------
     | [(1,1),(2,2)] |          1
@@ -3227,7 +2827,7 @@ SELECT * FROM one_of_every_data_type ORDER BY id,serial_col;
 (2 rows)
 
 -- Clean up.
-DROP TABLE IF EXISTS one_of_every_data_type; 
+DROP TABLE IF EXISTS qp_misc_jiras.one_of_every_data_type; 
 drop table if exists qp_misc_jiras.mpp7553_test;
 NOTICE:  table "mpp7553_test" does not exist, skipping
 create table qp_misc_jiras.mpp7553_test (i int, j int);
@@ -3319,13 +2919,6 @@ drop table if exists qp_misc_jiras.mpp7268_foo;
 drop table if exists qp_misc_jiras.mpp7268_bar;
 create table qp_misc_jiras.mpp7268_foo (a int, b int) distributed by (b);
 \d qp_misc_jiras.mpp7268_foo;
-     Table "qp_misc_jiras.mpp7268_foo"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- a      | character varying(15) | 
- b      | character varying(15) | 
-Distributed by: (b)
-
 Table "qp_misc_jiras.mpp7268_foo"
  Column |  Type   | Modifiers 
 --------+---------+-----------
@@ -3337,13 +2930,6 @@ create table qp_misc_jiras.mpp7268_bar as select * from qp_misc_jiras.mpp7268_fo
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column(s) named 'b' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
 \d qp_misc_jiras.mpp7268_bar; 
-     Table "qp_misc_jiras.mpp7268_bar"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- a      | character varying(15) | 
- b      | character varying(15) | 
-Distributed by: (b)
-
 Table "qp_misc_jiras.mpp7268_bar"
  Column |  Type   | Modifiers 
 --------+---------+-----------
@@ -3359,20 +2945,6 @@ create table qp_misc_jiras.mpp7268_foo (a varchar(15), b int) distributed by (b)
  Column |         Type          | Modifiers 
 --------+-----------------------+-----------
  a      | character varying(15) | 
- b      | character varying(15) | 
-Distributed by: (b)
-
-Table "qp_misc_jiras.mpp7268_foo"
- Column |  Type   | Modifiers 
---------+---------+-----------
- a      | integer | 
- b      | integer | 
-Distributed by: (b)
-
-     Table "qp_misc_jiras.mpp7268_foo"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- a      | character varying(15) | 
  b      | integer               | 
 Distributed by: (b)
 
@@ -3380,20 +2952,6 @@ create table qp_misc_jiras.mpp7268_bar as select * from qp_misc_jiras.mpp7268_fo
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column(s) named 'b' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
 \d qp_misc_jiras.mpp7268_bar; 
-     Table "qp_misc_jiras.mpp7268_bar"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- a      | character varying(15) | 
- b      | character varying(15) | 
-Distributed by: (b)
-
-Table "qp_misc_jiras.mpp7268_bar"
- Column |  Type   | Modifiers 
---------+---------+-----------
- a      | integer | 
- b      | integer | 
-Distributed by: (b)
-
      Table "qp_misc_jiras.mpp7268_bar"
  Column |         Type          | Modifiers 
 --------+-----------------------+-----------
@@ -3408,27 +2966,6 @@ create table qp_misc_jiras.mpp7268_foo (a int, b varchar(15)) distributed by (b)
      Table "qp_misc_jiras.mpp7268_foo"
  Column |         Type          | Modifiers 
 --------+-----------------------+-----------
- a      | character varying(15) | 
- b      | character varying(15) | 
-Distributed by: (b)
-
-Table "qp_misc_jiras.mpp7268_foo"
- Column |  Type   | Modifiers 
---------+---------+-----------
- a      | integer | 
- b      | integer | 
-Distributed by: (b)
-
-     Table "qp_misc_jiras.mpp7268_foo"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- a      | character varying(15) | 
- b      | integer               | 
-Distributed by: (b)
-
-     Table "qp_misc_jiras.mpp7268_foo"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
  a      | integer               | 
  b      | character varying(15) | 
 Distributed by: (b)
@@ -3437,27 +2974,6 @@ create table qp_misc_jiras.mpp7268_bar as select * from qp_misc_jiras.mpp7268_fo
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column(s) named 'b' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
 \d qp_misc_jiras.mpp7268_bar; 
-     Table "qp_misc_jiras.mpp7268_bar"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- a      | character varying(15) | 
- b      | character varying(15) | 
-Distributed by: (b)
-
-Table "qp_misc_jiras.mpp7268_bar"
- Column |  Type   | Modifiers 
---------+---------+-----------
- a      | integer | 
- b      | integer | 
-Distributed by: (b)
-
-     Table "qp_misc_jiras.mpp7268_bar"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- a      | character varying(15) | 
- b      | integer               | 
-Distributed by: (b)
-
      Table "qp_misc_jiras.mpp7268_bar"
  Column |         Type          | Modifiers 
 --------+-----------------------+-----------
@@ -3485,27 +3001,27 @@ drop table if exists qp_misc_jiras.mpp6775_bar;
 -- Test Set 1
 --
 set optimizer_segments=3;
-drop table if exists sample;
+drop table if exists qp_misc_jiras.sample;
 NOTICE:  table "sample" does not exist, skipping
-create table sample as select generate_series(1,1000);
+create table qp_misc_jiras.sample as select generate_series(1,1000);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column(s) named 'generate_series' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-drop table if exists fim1;
+drop table if exists qp_misc_jiras.fim1;
 NOTICE:  table "fim1" does not exist, skipping
-create table fim1 (a int);
+create table qp_misc_jiras.fim1 (a int);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'a' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-insert into fim1 values(100);
-insert into fim1 values(200);
-insert into fim1 values(300);
-drop table if exists pg_foo;
+insert into qp_misc_jiras.fim1 values(100);
+insert into qp_misc_jiras.fim1 values(200);
+insert into qp_misc_jiras.fim1 values(300);
+drop table if exists qp_misc_jiras.pg_foo;
 NOTICE:  table "pg_foo" does not exist, skipping
-create table pg_foo(x int);
+create table qp_misc_jiras.pg_foo(x int);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'x' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-insert into pg_foo values(111);
-insert into pg_foo values(222);
-insert into pg_foo values(333);
+insert into qp_misc_jiras.pg_foo values(111);
+insert into qp_misc_jiras.pg_foo values(222);
+insert into qp_misc_jiras.pg_foo values(333);
 create or replace function func1(int) returns int as $$
 declare
 	t1 int;
@@ -3515,11 +3031,12 @@ begin
 end;
 $$
 language plpgsql;
-drop table if exists bar;
-create table bar(a int);
+drop table if exists qp_misc_jiras.bar;
+NOTICE:  table "bar" does not exist, skipping
+create table qp_misc_jiras.bar(a int);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'a' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-explain select gp_segment_id, a, func1(a) from fim1; -- we allow this
+explain select gp_segment_id, a, func1(a) from qp_misc_jiras.fim1; -- we allow this
                                                                                   QUERY PLAN                                                                                  
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Gather Motion 3:1  (slice1; segments: 3)  (cost=0.00..251.38 rows=963 width=8)
@@ -3530,12 +3047,12 @@ explain select gp_segment_id, a, func1(a) from fim1; -- we allow this
 
 -- I ignored the select statement bcoz it was returning the count(*) of pg_class which can be varying. Hence ignored the select query.
 -- start_ignore
-select gp_segment_id, a, func1(a) from fim1; -- we allow this
+select gp_segment_id, a, func1(a) from qp_misc_jiras.fim1; -- we allow this
  gp_segment_id |  a  | func1 
 ---------------+-----+-------
-             2 | 100 |   379
-             1 | 200 |   379
-             1 | 300 |   379
+             2 | 100 |   382
+             1 | 200 |   382
+             1 | 300 |   382
 (3 rows)
 
 -- end_ignore
@@ -3543,12 +3060,12 @@ create or replace function func2(int) returns int as $$
 declare
 	t1 int;
 begin
-	execute 'select count(*) from pg_foo' into t1;
+	execute 'select count(*) from qp_misc_jiras.pg_foo' into t1;
 	return t1;
 end;
 $$
 language plpgsql;
-explain select gp_segment_id, a, func2(a) from fim1; -- we should disallow this
+explain select gp_segment_id, a, func2(a) from qp_misc_jiras.fim1; -- we should disallow this
                                                                                   QUERY PLAN                                                                                  
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Gather Motion 3:1  (slice1; segments: 3)  (cost=0.00..251.38 rows=963 width=8)
@@ -3557,10 +3074,10 @@ explain select gp_segment_id, a, func2(a) from fim1; -- we should disallow this
  Optimizer status: legacy query optimizer
 (4 rows)
 
-select gp_segment_id, a, func2(a) from fim1; -- we should disallow this
-ERROR:  function cannot execute on segment because it accesses relation "public.pg_foo" (functions.c:155)  (seg1 slice1 nikos-mac:25433 pid=87315)
+select gp_segment_id, a, func2(a) from qp_misc_jiras.fim1; -- we should disallow this
+ERROR:  function cannot execute on segment because it accesses relation "qp_misc_jiras.pg_foo" (functions.c:155)  (seg1 slice1 nikos-mac:25433 pid=30750)
 DETAIL:  
-SQL statement "select count(*) from pg_foo"
+SQL statement "select count(*) from qp_misc_jiras.pg_foo"
 PL/pgSQL function "func2" line 4 at execute statement
 create or replace function func3(int) returns int as $$
 declare
@@ -3571,7 +3088,7 @@ begin
 end;
 $$
 language plpgsql;
-explain select gp_segment_id, a, func3(a) from fim1; -- we allow this
+explain select gp_segment_id, a, func3(a) from qp_misc_jiras.fim1; -- we allow this
                                                                                   QUERY PLAN                                                                                  
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Gather Motion 3:1  (slice1; segments: 3)  (cost=0.00..251.38 rows=963 width=8)
@@ -3580,7 +3097,7 @@ explain select gp_segment_id, a, func3(a) from fim1; -- we allow this
  Optimizer status: legacy query optimizer
 (4 rows)
 
-select gp_segment_id, a, func3(a) from fim1; -- we allow this
+select gp_segment_id, a, func3(a) from qp_misc_jiras.fim1; -- we allow this
  gp_segment_id |  a  | func3 
 ---------------+-----+-------
              2 | 100 |     1
@@ -3591,12 +3108,12 @@ select gp_segment_id, a, func3(a) from fim1; -- we allow this
 --
 -- Test Set 2
 --
-drop table if exists fim1;
-create table fim1 (a int, chldrn_id varchar(50)) ;
+drop table if exists qp_misc_jiras.fim1;
+create table qp_misc_jiras.fim1 (a int, chldrn_id varchar(50)) ;
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'a' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-insert into fim1 values (1,'1~9');
-insert into fim1 values (2,'2~9');
+insert into qp_misc_jiras.fim1 values (1,'1~9');
+insert into qp_misc_jiras.fim1 values (2,'2~9');
 CREATE OR REPLACE FUNCTION public.array_intersect1(anyarray, anyarray) RETURNS anyarray as $$
 SELECT ARRAY(SELECT x FROM unnest($1) x INTERSECT SELECT y from unnest($2) y)
 $$ language sql;
@@ -3613,42 +3130,42 @@ SELECT ARRAY(SELECT $1[i]
     FROM generate_series( array_lower($1, 1), array_upper($1, 1) ) i
       WHERE ARRAY[$1[i]] && $2)
 $$ language sql immutable;
-select array_intersect1(array[1,9]::int4[], array[-1,5,4,3,2,1,0]::int4[]) from fim1; -- we allow it even though the function is volatile.
+select array_intersect1(array[1,9]::int4[], array[-1,5,4,3,2,1,0]::int4[]) from qp_misc_jiras.fim1; -- we allow it even though the function is volatile.
  array_intersect1 
 ------------------
  {1}
  {1}
 (2 rows)
 
-select array_intersect2(array[1,9]::int4[], array[-1,5,4,3,2,1,0]::int4[]) from fim1; -- we allow it even though the function is volatile.
+select array_intersect2(array[1,9]::int4[], array[-1,5,4,3,2,1,0]::int4[]) from qp_misc_jiras.fim1; -- we allow it even though the function is volatile.
  array_intersect2 
 ------------------
  {1}
  {1}
 (2 rows)
 
-select array_intersect3(array[1,9]::int4[], array[-1,5,4,3,2,1,0]::int4[]) from fim1; -- should work.
+select array_intersect3(array[1,9]::int4[], array[-1,5,4,3,2,1,0]::int4[]) from qp_misc_jiras.fim1; -- should work.
  array_intersect3 
 ------------------
  {1}
  {1}
 (2 rows)
 
-select array_intersect4(array[1,9]::int4[], array[-1,5,4,3,2,1,0]::int4[]) from fim1; -- should work.
+select array_intersect4(array[1,9]::int4[], array[-1,5,4,3,2,1,0]::int4[]) from qp_misc_jiras.fim1; -- should work.
  array_intersect4 
 ------------------
  {1}
  {1}
 (2 rows)
 
-select array_intersect3(i::int4[], array[-1,5,4,3,2,1,0]::int4[]) from (select string_to_array(chldrn_id,'~') as i from fim1) b  ; -- should produce {1},{2}
+select array_intersect3(i::int4[], array[-1,5,4,3,2,1,0]::int4[]) from (select string_to_array(chldrn_id,'~') as i from qp_misc_jiras.fim1) b  ; -- should produce {1},{2}
  array_intersect3 
 ------------------
  {1}
  {2}
 (2 rows)
 
-select array_intersect4(i::int4[], array[-1,5,4,3,2,1,0]::int4[]) from (select string_to_array(chldrn_id,'~') as i from fim1) b  ; -- should produce {1},{2}
+select array_intersect4(i::int4[], array[-1,5,4,3,2,1,0]::int4[]) from (select string_to_array(chldrn_id,'~') as i from qp_misc_jiras.fim1) b  ; -- should produce {1},{2}
  array_intersect4 
 ------------------
  {1}
@@ -3658,10 +3175,10 @@ select array_intersect4(i::int4[], array[-1,5,4,3,2,1,0]::int4[]) from (select s
 drop function func1(int);
 drop function func2(int);
 drop function func3(int);
-drop table sample;
-drop table fim1;
-drop table pg_foo;
-drop table bar;
+drop table qp_misc_jiras.sample;
+drop table qp_misc_jiras.fim1;
+drop table qp_misc_jiras.pg_foo;
+drop table qp_misc_jiras.bar;
 -- Create 2 tables from which we can inherit.  
 CREATE TABLE tableA (ssn INT, lastName VARCHAR, junk INT) DISTRIBUTED BY (ssn);
 CREATE TABLE tableB (id INT, lastName VARCHAR, moreJunk INT) DISTRIBUTED BY (id);
@@ -4413,6 +3930,8 @@ DROP FUNCTION qp_misc_jiras.mpp5032_func();
 drop table utable cascade;
 ERROR:  table "utable" does not exist
 -- end_ignore
+reset statement_timeout;
+set statement_mem = '512MB';
 create table utable (
     tstart timestamp,
     tfinish timestamp,
@@ -4453,6 +3972,7 @@ insert into utable values
     (timestamp '2009-05-01 01:01:09', timestamp '2009-05-01 02:01:10', 'b', 1.0),
     (timestamp '2009-05-03 01:01:10', timestamp '2009-05-01 02:01:10', 'b', 1.0);
 -- This works.
+reset statement_mem;
 select 
     period::date,
 --    avg( case ctxt when 'a' then wsum end) as "a"
@@ -5026,9 +4546,8 @@ NOTICE:  1  (seg0 nikos-mac:25432 pid=58674)
 SELECT * FROM test_trig;
  id |  aaa  
 ----+-------
-  1 | aaa1
   1 | aaa11
-(2 rows)
+(1 row)
 
 DROP TABLE test_trig;
 DROP FUNCTION fn_trig();
