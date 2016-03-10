@@ -344,15 +344,15 @@ CREATE TABLE qp_misc_jiras.satelliteupdatelog (
 );
 
 
-CREATE SEQUENCE satelliteupdatelog_id_seq
+CREATE SEQUENCE qp_misc_jiras.satelliteupdatelog_id_seq
     INCREMENT BY 1
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
 
-ALTER SEQUENCE satelliteupdatelog_id_seq OWNED BY qp_misc_jiras.satelliteupdatelog.id;
+ALTER SEQUENCE qp_misc_jiras.satelliteupdatelog_id_seq OWNED BY qp_misc_jiras.satelliteupdatelog.id;
 
-ALTER TABLE qp_misc_jiras.satelliteupdatelog ALTER COLUMN id SET DEFAULT nextval('satelliteupdatelog_id_seq'::regclass);
+ALTER TABLE qp_misc_jiras.satelliteupdatelog ALTER COLUMN id SET DEFAULT nextval('qp_misc_jiras.satelliteupdatelog_id_seq'::regclass);
 ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelog ADD CONSTRAINT satelliteupdatelog_pk PRIMARY KEY (id);
 CREATE INDEX fki_satelliteupdatelog_idadvertiser_fk ON qp_misc_jiras.satelliteupdatelog USING btree (idadvertiser);
 CREATE INDEX fki_satelliteupdatelog_idaffiliate_fk ON qp_misc_jiras.satelliteupdatelog USING btree (idaffiliate);
@@ -366,7 +366,7 @@ CREATE TABLE qp_misc_jiras.satelliteupdatelogkey (
 );
 
 ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelogkey ADD CONSTRAINT satelliteupdatelogkey_pk PRIMARY KEY (idsatelliteupdatelog, columnname);
-ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelogkey ADD CONSTRAINT satelliteupdatelogkey_idsatelliteupdatelog_fk FOREIGN KEY (idsatelliteupdatelog) REFERENCES satelliteupdatelog(id);
+ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelogkey ADD CONSTRAINT satelliteupdatelogkey_idsatelliteupdatelog_fk FOREIGN KEY (idsatelliteupdatelog) REFERENCES qp_misc_jiras.satelliteupdatelog(id);
 ------------
 CREATE TABLE qp_misc_jiras.satellite (
     id integer NOT NULL,
@@ -378,15 +378,15 @@ CREATE TABLE qp_misc_jiras.satellite (
 );
 
 
-CREATE SEQUENCE satellite_id_seq
+CREATE SEQUENCE qp_misc_jiras.satellite_id_seq
     INCREMENT BY 1
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
 
-ALTER SEQUENCE satellite_id_seq OWNED BY qp_misc_jiras.satellite.id;
+ALTER SEQUENCE qp_misc_jiras.satellite_id_seq OWNED BY qp_misc_jiras.satellite.id;
 
-ALTER TABLE qp_misc_jiras.satellite ALTER COLUMN id SET DEFAULT nextval('satellite_id_seq'::regclass);
+ALTER TABLE qp_misc_jiras.satellite ALTER COLUMN id SET DEFAULT nextval('qp_misc_jiras.satellite_id_seq'::regclass);
 
 
 --------
@@ -400,8 +400,8 @@ CREATE TABLE qp_misc_jiras.satelliteupdatelogserver (
 
 ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelogserver ADD CONSTRAINT satelliteupdatelogserver_pk PRIMARY KEY (idsatelliteupdatelog, idsatellite); 
 CREATE INDEX fki_satelliteupdatelogserver_idsatelliteupdatelog_fk ON qp_misc_jiras.satelliteupdatelogserver USING btree (idsatelliteupdatelog);
-ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelogserver ADD CONSTRAINT satelliteupdatelogserver_idsatellite_fk FOREIGN KEY (idsatellite) REFERENCES satellite(id);
-ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelogserver ADD CONSTRAINT satelliteupdatelogserver_idsatelliteupdatelog_fk FOREIGN KEY (idsatelliteupdatelog) REFERENCES satelliteupdatelog(id);
+ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelogserver ADD CONSTRAINT satelliteupdatelogserver_idsatellite_fk FOREIGN KEY (idsatellite) REFERENCES qp_misc_jiras.satellite(id);
+ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelogserver ADD CONSTRAINT satelliteupdatelogserver_idsatelliteupdatelog_fk FOREIGN KEY (idsatelliteupdatelog) REFERENCES qp_misc_jiras.satelliteupdatelog(id);
 -------------
 
 SELECT /* gptest */ s.id, s.action, s.type, sk.columnName AS "columnName", sk.value
@@ -1199,7 +1199,7 @@ AND (T1.PLYNO, T1.NDSNO, SUBSTR(T1.NDS_MGB,2,2)) NOT IN (
 SELECT PLYNO
 ,NDSNO
 ,SUBSTR(NDS_MGB,2,2) AS NDS_MGB
-FROM M_CCR_CVR_NDS_T99
+FROM qp_misc_jiras.M_CCR_CVR_NDS_T99
 ) 
 ) T
 WHERE T.SQ = 1 
@@ -1247,7 +1247,7 @@ create table qp_misc_jiras.bar (t int, d int, g int);
 insert into qp_misc_jiras.bar values(1,2,3);
 insert into qp_misc_jiras.bar values(4,5,6);
 
-select a.t from qp_misc_jiras.bar a where d in(select d from bar b where a.g=b.g) order by a.t;
+select a.t from qp_misc_jiras.bar a where d in(select d from qp_misc_jiras.bar b where a.g=b.g) order by a.t;
 -- Various AO/CO util functions
 drop table if exists qp_misc_jiras.mpp7126_ao;
 drop table if exists qp_misc_jiras.mpp7126_ao_zlib3;
@@ -2658,14 +2658,14 @@ create table qp_misc_jiras.badbitmapindex (x int, y int, z int);
 insert into qp_misc_jiras.badbitmapindex values (0,0,0);
 insert into qp_misc_jiras.badbitmapindex values (0,0,NULL);
 create index badbitmapindex1 on qp_misc_jiras.badbitmapindex using bitmap(y,z);
-analyze badbitmapindex;
+analyze qp_misc_jiras.badbitmapindex;
 --explain select * from badbitmapindex where y = 0 and z = 0;
-insert into badbitmapindex select generate_series(1,100*500);
-analyze badbitmapindex;
+insert into qp_misc_jiras.badbitmapindex select generate_series(1,100*500);
+analyze qp_misc_jiras.badbitmapindex;
 --explain select * from badbitmapindex where y = 0 and z = 0;
-select * from badbitmapindex where y = 0 and z = 0;
-drop index badbitmapindex1;
-drop index bmap2_index;
+select * from qp_misc_jiras.badbitmapindex where y = 0 and z = 0;
+drop index qp_misc_jiras.badbitmapindex1;
+drop index qp_misc_jiras.bmap2_index;
 drop table qp_misc_jiras.badbitmapindex;
 drop table qp_misc_jiras.bmap2;
 -- start_ignore
@@ -2685,7 +2685,7 @@ CREATE TABLE qp_misc_jiras.execution_table (
 )
 DISTRIBUTED BY (id);
 
-INSERT INTO execution_table SELECT * from generate_series(1, 1000000) i;
+INSERT INTO qp_misc_jiras.execution_table SELECT * from generate_series(1, 1000000) i;
 
 CREATE TABLE qp_misc_jiras.execution_t2 AS
 SELECT id, execution_id, status FROM qp_misc_jiras.execution_table
@@ -2719,8 +2719,8 @@ set statement_timeout=20;
 DROP TABLE qp_misc_jiras.abc_mpp9083;
 set statement_timeout=0;
 
-DROP TABLE execution_table;
-DROP TABLE execution_t2;
+DROP TABLE qp_misc_jiras.execution_table;
+DROP TABLE qp_misc_jiras.execution_t2;
 
 set gp_debug_linger=3;
 
@@ -2740,7 +2740,7 @@ CREATE TABLE qp_misc_jiras.ir_voice_sms_and_data (
 explain select
 case when ir_call_type_group_code in ('H', 'VH', 'PCB') then 'Thailland'
 else 'Unidentify' end || 'a'
-from ir_voice_sms_and_data
+from qp_misc_jiras.ir_voice_sms_and_data
 group by 
 case when ir_call_supplementary_svc_code in ('S20','S21')
 then 'MO' else 'foo' end
@@ -3129,9 +3129,9 @@ select id, seq, sum(val) over (partition by id order by seq::numeric range betwe
 insert into qp_misc_jiras.esc176_1 values (1,9,0.3,CURRENT_TIMESTAMP);
 insert into qp_misc_jiras.esc176_1 values (1,10,0.4,CURRENT_TIMESTAMP);
 insert into qp_misc_jiras.esc176_1 values (1,11,0.6, CURRENT_TIMESTAMP);
-insert into qp_misc_jiras.esc176_1 select * from esc176_1;
-insert into qp_misc_jiras.esc176_1 select * from esc176_1;
-insert into qp_misc_jiras.esc176_1 select * from esc176_1;
+insert into qp_misc_jiras.esc176_1 select * qp_misc_jiras.from esc176_1;
+insert into qp_misc_jiras.esc176_1 select * qp_misc_jiras.from esc176_1;
+insert into qp_misc_jiras.esc176_1 select * qp_misc_jiras.from esc176_1;
 insert into qp_misc_jiras.esc176_1 values (1,9,0.3, CURRENT_TIMESTAMP);
 insert into qp_misc_jiras.esc176_1 values (1,10,0.4,CURRENT_TIMESTAMP);
 insert into qp_misc_jiras.esc176_1 values (1,11,0.6,CURRENT_TIMESTAMP);
