@@ -21,7 +21,7 @@ test: filter gpctas gpdist matrix toast sublink sirv_functions table_functions o
 
 test: dispatch
 
-test: misc_jiras
+test: qp_misc_jiras
 
 # 'segspace' relies on the segment spill space to be 0, and uses fault injectors
 # so it needs to be in a group by itself
