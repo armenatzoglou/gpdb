@@ -3129,9 +3129,9 @@ select id, seq, sum(val) over (partition by id order by seq::numeric range betwe
 insert into qp_misc_jiras.esc176_1 values (1,9,0.3,CURRENT_TIMESTAMP);
 insert into qp_misc_jiras.esc176_1 values (1,10,0.4,CURRENT_TIMESTAMP);
 insert into qp_misc_jiras.esc176_1 values (1,11,0.6, CURRENT_TIMESTAMP);
-insert into qp_misc_jiras.esc176_1 select * qp_misc_jiras.from esc176_1;
-insert into qp_misc_jiras.esc176_1 select * qp_misc_jiras.from esc176_1;
-insert into qp_misc_jiras.esc176_1 select * qp_misc_jiras.from esc176_1;
+insert into qp_misc_jiras.esc176_1 select * from qp_misc_jiras.esc176_1;
+insert into qp_misc_jiras.esc176_1 select * from qp_misc_jiras.esc176_1;
+insert into qp_misc_jiras.esc176_1 select * from qp_misc_jiras.esc176_1;
 insert into qp_misc_jiras.esc176_1 values (1,9,0.3, CURRENT_TIMESTAMP);
 insert into qp_misc_jiras.esc176_1 values (1,10,0.4,CURRENT_TIMESTAMP);
 insert into qp_misc_jiras.esc176_1 values (1,11,0.6,CURRENT_TIMESTAMP);

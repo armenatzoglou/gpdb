@@ -580,29 +580,29 @@ CREATE TABLE qp_misc_jiras.satelliteupdatelog (
 );
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'id' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-CREATE SEQUENCE satelliteupdatelog_id_seq
+CREATE SEQUENCE qp_misc_jiras.satelliteupdatelog_id_seq
     INCREMENT BY 1
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
-ALTER SEQUENCE satelliteupdatelog_id_seq OWNED BY satelliteupdatelog.id;
-ALTER TABLE satelliteupdatelog ALTER COLUMN id SET DEFAULT nextval('satelliteupdatelog_id_seq'::regclass);
-ALTER TABLE ONLY satelliteupdatelog ADD CONSTRAINT satelliteupdatelog_pk PRIMARY KEY (id);
+ALTER SEQUENCE qp_misc_jiras.satelliteupdatelog_id_seq OWNED BY qp_misc_jiras.satelliteupdatelog.id;
+ALTER TABLE qp_misc_jiras.satelliteupdatelog ALTER COLUMN id SET DEFAULT nextval('qp_misc_jiras.satelliteupdatelog_id_seq'::regclass);
+ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelog ADD CONSTRAINT satelliteupdatelog_pk PRIMARY KEY (id);
 NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "satelliteupdatelog_pkey" for table "satelliteupdatelog"
-CREATE INDEX fki_satelliteupdatelog_idadvertiser_fk ON satelliteupdatelog USING btree (idadvertiser);
-CREATE INDEX fki_satelliteupdatelog_idaffiliate_fk ON satelliteupdatelog USING btree (idaffiliate);
-CREATE INDEX fki_satelliteupdatelog_idrep_fk ON satelliteupdatelog USING btree (idrep);
+CREATE INDEX fki_satelliteupdatelog_idadvertiser_fk ON qp_misc_jiras.satelliteupdatelog USING btree (idadvertiser);
+CREATE INDEX fki_satelliteupdatelog_idaffiliate_fk ON qp_misc_jiras.satelliteupdatelog USING btree (idaffiliate);
+CREATE INDEX fki_satelliteupdatelog_idrep_fk ON qp_misc_jiras.satelliteupdatelog USING btree (idrep);
 ------------------------
-CREATE TABLE satelliteupdatelogkey (
+CREATE TABLE qp_misc_jiras.satelliteupdatelogkey (
     idsatelliteupdatelog integer NOT NULL,
     columnname character varying NOT NULL,
     value character varying
 );
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'idsatelliteupdatelog' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-ALTER TABLE ONLY satelliteupdatelogkey ADD CONSTRAINT satelliteupdatelogkey_pk PRIMARY KEY (idsatelliteupdatelog, columnname);
+ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelogkey ADD CONSTRAINT satelliteupdatelogkey_pk PRIMARY KEY (idsatelliteupdatelog, columnname);
 NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "satelliteupdatelogkey_pkey" for table "satelliteupdatelogkey"
-ALTER TABLE ONLY satelliteupdatelogkey ADD CONSTRAINT satelliteupdatelogkey_idsatelliteupdatelog_fk FOREIGN KEY (idsatelliteupdatelog) REFERENCES satelliteupdatelog(id);
+ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelogkey ADD CONSTRAINT satelliteupdatelogkey_idsatelliteupdatelog_fk FOREIGN KEY (idsatelliteupdatelog) REFERENCES qp_misc_jiras.satelliteupdatelog(id);
 WARNING:  Referential integrity (FOREIGN KEY) constraints are not supported in Greenplum Database, will not be enforced.
 ------------
 CREATE TABLE qp_misc_jiras.satellite (
@@ -615,13 +615,13 @@ CREATE TABLE qp_misc_jiras.satellite (
 );
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'id' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-CREATE SEQUENCE satellite_id_seq
+CREATE SEQUENCE qp_misc_jiras.satellite_id_seq
     INCREMENT BY 1
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
-ALTER SEQUENCE satellite_id_seq OWNED BY satellite.id;
-ALTER TABLE satellite ALTER COLUMN id SET DEFAULT nextval('satellite_id_seq'::regclass);
+ALTER SEQUENCE qp_misc_jiras.satellite_id_seq OWNED BY qp_misc_jiras.satellite.id;
+ALTER TABLE qp_misc_jiras.satellite ALTER COLUMN id SET DEFAULT nextval('qp_misc_jiras.satellite_id_seq'::regclass);
 --------
 CREATE TABLE qp_misc_jiras.satelliteupdatelogserver (
     idsatelliteupdatelog integer NOT NULL,
@@ -632,19 +632,19 @@ CREATE TABLE qp_misc_jiras.satelliteupdatelogserver (
 );
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'idsatelliteupdatelog' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-ALTER TABLE ONLY satelliteupdatelogserver ADD CONSTRAINT satelliteupdatelogserver_pk PRIMARY KEY (idsatelliteupdatelog, idsatellite); 
+ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelogserver ADD CONSTRAINT satelliteupdatelogserver_pk PRIMARY KEY (idsatelliteupdatelog, idsatellite); 
 NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "satelliteupdatelogserver_pkey" for table "satelliteupdatelogserver"
-CREATE INDEX fki_satelliteupdatelogserver_idsatelliteupdatelog_fk ON satelliteupdatelogserver USING btree (idsatelliteupdatelog);
-ALTER TABLE ONLY satelliteupdatelogserver ADD CONSTRAINT satelliteupdatelogserver_idsatellite_fk FOREIGN KEY (idsatellite) REFERENCES satellite(id);
+CREATE INDEX fki_satelliteupdatelogserver_idsatelliteupdatelog_fk ON qp_misc_jiras.satelliteupdatelogserver USING btree (idsatelliteupdatelog);
+ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelogserver ADD CONSTRAINT satelliteupdatelogserver_idsatellite_fk FOREIGN KEY (idsatellite) REFERENCES qp_misc_jiras.satellite(id);
 ERROR:  there is no unique constraint matching given keys for referenced table "satellite"
-ALTER TABLE ONLY satelliteupdatelogserver ADD CONSTRAINT satelliteupdatelogserver_idsatelliteupdatelog_fk FOREIGN KEY (idsatelliteupdatelog) REFERENCES satelliteupdatelog(id);
+ALTER TABLE ONLY qp_misc_jiras.satelliteupdatelogserver ADD CONSTRAINT satelliteupdatelogserver_idsatelliteupdatelog_fk FOREIGN KEY (idsatelliteupdatelog) REFERENCES qp_misc_jiras.satelliteupdatelog(id);
 WARNING:  Referential integrity (FOREIGN KEY) constraints are not supported in Greenplum Database, will not be enforced.
 -------------
 SELECT /* gptest */ s.id, s.action, s.type, sk.columnName AS "columnName", sk.value
-FROM satelliteUpdateLog AS s
-LEFT JOIN satelliteUpdateLogKey AS sk ON s.id = sk.idSatelliteUpdateLog
-JOIN satelliteUpdateLogServer AS ss ON s.id = ss.idSatelliteUpdateLog
-JOIN satellite AS sat ON sat.id = ss.idSatellite
+FROM qp_misc_jiras.satelliteUpdateLog AS s
+LEFT JOIN qp_misc_jiras.satelliteUpdateLogKey AS sk ON s.id = sk.idSatelliteUpdateLog
+JOIN qp_misc_jiras.satelliteUpdateLogServer AS ss ON s.id = ss.idSatelliteUpdateLog
+JOIN qp_misc_jiras.satellite AS sat ON sat.id = ss.idSatellite
 WHERE ss.completed IS NULL
 AND ss.retrys > 0
 AND sat.enabled
@@ -655,6 +655,8 @@ ORDER BY s.scheduled;
 (0 rows)
 
 drop table qp_misc_jiras.satelliteupdatelog cascade;
+NOTICE:  drop cascades to constraint satelliteupdatelogserver_idsatelliteupdatelog_fk on table qp_misc_jiras.satelliteupdatelogserver
+NOTICE:  drop cascades to constraint satelliteupdatelogkey_idsatelliteupdatelog_fk on table qp_misc_jiras.satelliteupdatelogkey
 drop table qp_misc_jiras.satelliteupdatelogkey cascade;
 drop table qp_misc_jiras.satellite cascade;
 drop table qp_misc_jiras.satelliteupdatelogserver cascade;
@@ -1090,7 +1092,7 @@ insert into qp_misc_jiras.mpp4958_test select i, i%36, i%109 from generate_serie
 select qp_misc_jiras.mpp4958_percent_cont(0.90, i::numeric, j, k) from qp_misc_jiras.mpp4958_test;
  mpp4958_percent_cont 
 ----------------------
-               999940
+               999954
 (1 row)
 
 \echo -- end_ignore
@@ -1835,14 +1837,14 @@ drop table qp_misc_jiras.mpp6419_test;
 -- s/pg_temp_(\d)+/pg_temp_xx/
 \echo -- end_matchsubs
 -- end_matchsubs
-create temp table foo (a int, b text);
+create temp table qp_misc_jiras_foo (a int, b text);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'a' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
 -- start_ignore
 select 'drop schema '||nspname||' cascade;' from pg_namespace where nspname like '%temp%';
-             ?column?              
------------------------------------
- drop schema pg_temp_2594 cascade;
+            ?column?             
+---------------------------------
+ drop schema pg_temp_86 cascade;
 (1 row)
 
 -- end_ignore
@@ -2041,10 +2043,10 @@ WHEN NDS_DT_ITNM IN ('자차','자기차량가입금액','자기부담금액','�
 WHEN NDS_DT_ITNM IN ('기계 가입금액','기계장치가입금액') THEN '207'
 ELSE '299' END NDS_MGB
 ,'2' NDS_LGB 
-FROM M_CCR_MTHY_CR_NDS_T00 S1 /******공통사용예정********/
-INNER JOIN INS_CR_NDS_DT A1
+FROM qp_misc_jiras.M_CCR_MTHY_CR_NDS_T00 S1 /******공통사용예정********/
+INNER JOIN qp_misc_jiras.INS_CR_NDS_DT A1
 ON S1.PLYNO=A1.PLYNO
-LEFT OUTER JOIN INS_CR_NDS_MSTR A2
+LEFT OUTER JOIN qp_misc_jiras.INS_CR_NDS_MSTR A2
 ON A1.PLYNO = A2.PLYNO
 AND A1.NDSNO = A2.NDSNO 
 ) T1
@@ -2053,7 +2055,7 @@ AND (T1.PLYNO, T1.NDSNO, SUBSTR(T1.NDS_MGB,2,2)) NOT IN (
 SELECT PLYNO
 ,NDSNO
 ,SUBSTR(NDS_MGB,2,2) AS NDS_MGB
-FROM M_CCR_CVR_NDS_T99
+FROM qp_misc_jiras.M_CCR_CVR_NDS_T99
 ) 
 ) T
 WHERE T.SQ = 1 
@@ -2062,7 +2064,7 @@ WHERE T.SQ = 1
 ----------+-------+-------+--------------+--------------+-----------+---------+-------+---------------+----------+----------+-------------+--------------+----------+-------+-------+-------------+---------+---------
 (0 rows)
 
-drop table ins_cr_nds_dt, ins_cr_nds_mstr, m_ccr_cvr_nds_t99, m_ccr_mthy_cr_nds_t00;
+drop table qp_misc_jiras.ins_cr_nds_dt, qp_misc_jiras.ins_cr_nds_mstr, qp_misc_jiras.m_ccr_cvr_nds_t99, qp_misc_jiras.m_ccr_mthy_cr_nds_t00;
 reset gp_select_invisible;
 create table qp_misc_jiras.mpp6448 (x "char");
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'x' as the Greenplum Database data distribution key for this table.
@@ -2124,8 +2126,9 @@ select relname, reltuples, relpages from pg_class where relname like 'mpp6833_va
 drop table qp_misc_jiras.mpp6833_anl;
 drop table qp_misc_jiras.mpp6833_vac;
 -- actual query
-drop table if exists foo;
-create table foo(x int) distributed by (x);
+drop table if exists qp_misc_jiras.foo;
+NOTICE:  table "foo" does not exist, skipping
+create table qp_misc_jiras.foo(x int) distributed by (x);
 SELECT t.attrnums, a.attname, pg_catalog.format_type(a.atttypid, a.atttypmod),
 a.attnotnull, a.attnum, pg_catalog.col_description(a.attrelid, a.attnum)
 FROM pg_catalog.pg_class c
@@ -2139,14 +2142,14 @@ WHERE c.relname ~ '^(foo)$';
 (1 row)
 
 -- previously supported query
-drop table if exists bar;
+drop table if exists qp_misc_jiras.bar;
 NOTICE:  table "bar" does not exist, skipping
-create table bar (t int, d int, g int);
+create table qp_misc_jiras.bar (t int, d int, g int);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 't' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-insert into bar values(1,2,3);
-insert into bar values(4,5,6);
-select a.t from bar a where d in(select d from bar b where a.g=b.g) order by a.t;
+insert into qp_misc_jiras.bar values(1,2,3);
+insert into qp_misc_jiras.bar values(4,5,6);
+select a.t from qp_misc_jiras.bar a where d in(select d from qp_misc_jiras.bar b where a.g=b.g) order by a.t;
  t 
 ---
  1
@@ -2756,7 +2759,7 @@ insert into qp_misc_jiras.mpp7740_rank values(1,'M','1');
 insert into qp_misc_jiras.mpp7740_rank values(1,'M','0');
 -- start_ignore 
 alter table qp_misc_jiras.mpp7740_rank split default partition at (values(('F', '0'))) into (partition mother, partition other);
-NOTICE:  exchanged partition "other" of relation "mpp7740_rank" with relation "pg_temp_324013"
+NOTICE:  exchanged partition "other" of relation "mpp7740_rank" with relation "pg_temp_33751"
 NOTICE:  dropped partition "other" for relation "mpp7740_rank"
 NOTICE:  CREATE TABLE will create partition "mpp7740_rank_1_prt_mother" for table "mpp7740_rank"
 NOTICE:  CREATE TABLE will create partition "mpp7740_rank_1_prt_other" for table "mpp7740_rank"
@@ -2879,7 +2882,7 @@ explain select j as a, j as b from qp_misc_jiras.mpp7553_test group by grouping 
                                        ->  Sort  (cost=51.58..53.74 rows=287 width=4)
                                              Sort Key: mpp7553_test.j, mpp7553_test.j
                                              ->  Seq Scan on mpp7553_test  (cost=0.00..9.61 rows=287 width=4)
- Settings:  enable_indexscan=off; enable_nestloop=on; enable_seqscan=off; gp_enable_agg_distinct=off; gp_enable_agg_distinct_pruning=off
+ Settings:  enable_indexscan=off; enable_nestloop=on; enable_seqscan=off; gp_enable_agg_distinct=off; gp_enable_agg_distinct_pruning=off; optimizer=off
  Optimizer status: legacy query optimizer
 (16 rows)
 
@@ -3032,7 +3035,6 @@ end;
 $$
 language plpgsql;
 drop table if exists qp_misc_jiras.bar;
-NOTICE:  table "bar" does not exist, skipping
 create table qp_misc_jiras.bar(a int);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'a' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
@@ -3075,7 +3077,7 @@ explain select gp_segment_id, a, func2(a) from qp_misc_jiras.fim1; -- we should 
 (4 rows)
 
 select gp_segment_id, a, func2(a) from qp_misc_jiras.fim1; -- we should disallow this
-ERROR:  function cannot execute on segment because it accesses relation "qp_misc_jiras.pg_foo" (functions.c:155)  (seg1 slice1 nikos-mac:25433 pid=30750)
+ERROR:  function cannot execute on segment because it accesses relation "qp_misc_jiras.pg_foo" (functions.c:155)  (seg2 slice1 nikos-mac:25434 pid=94008)
 DETAIL:  
 SQL statement "select count(*) from qp_misc_jiras.pg_foo"
 PL/pgSQL function "func2" line 4 at execute statement
@@ -3180,35 +3182,35 @@ drop table qp_misc_jiras.fim1;
 drop table qp_misc_jiras.pg_foo;
 drop table qp_misc_jiras.bar;
 -- Create 2 tables from which we can inherit.  
-CREATE TABLE tableA (ssn INT, lastName VARCHAR, junk INT) DISTRIBUTED BY (ssn);
-CREATE TABLE tableB (id INT, lastName VARCHAR, moreJunk INT) DISTRIBUTED BY (id);
+CREATE TABLE qp_misc_jiras.tableA (ssn INT, lastName VARCHAR, junk INT) DISTRIBUTED BY (ssn);
+CREATE TABLE qp_misc_jiras.tableB (id INT, lastName VARCHAR, moreJunk INT) DISTRIBUTED BY (id);
 -- Create a table that inherits from the previous two.
-CREATE TABLE tableC (uid INT) INHERITS (tableA, tableB) DISTRIBUTED BY (uid);
+CREATE TABLE qp_misc_jiras.tableC (uid INT) INHERITS (qp_misc_jiras.tableA, qp_misc_jiras.tableB) DISTRIBUTED BY (uid);
 NOTICE:  merging multiple inherited definitions of column "lastname"
 -- Expose the bug.
-SELECT * FROM tableC;
+SELECT * FROM qp_misc_jiras.tableC;
  ssn | lastname | junk | id | morejunk | uid 
 -----+----------+------+----+----------+-----
 (0 rows)
 
 -- start_ignore
-DROP TABLE tableE;
+DROP TABLE qp_misc_jiras.tableE;
 ERROR:  table "tablee" does not exist
-DROP TABLE tableD;
+DROP TABLE qp_misc_jiras.tableD;
 ERROR:  table "tabled" does not exist
-DROP TABLE tableC;
-DROP TABLE tableB;
-DROP TABLE tableA;
+DROP TABLE qp_misc_jiras.tableC;
+DROP TABLE qp_misc_jiras.tableB;
+DROP TABLE qp_misc_jiras.tableA;
 -- end_ignore
-CREATE TABLE tableA (ssn INT, lastName VARCHAR, junk INT) DISTRIBUTED BY (ssn);
-CREATE TABLE tableB (id INT, lastName VARCHAR, moreJunk INT) DISTRIBUTED BY (id);
-INSERT INTO tablea VALUES (1, 'foo',2);
-INSERT INTO tableb VALUES (2, 'bar',4);
-CREATE TABLE tableC (uid1 INT, uid2 INT, uid3 INT) INHERITS (tableA, tableB) DISTRIBUTED BY (uid1, uid2, uid3);
+CREATE TABLE qp_misc_jiras.tableA (ssn INT, lastName VARCHAR, junk INT) DISTRIBUTED BY (ssn);
+CREATE TABLE qp_misc_jiras.tableB (id INT, lastName VARCHAR, moreJunk INT) DISTRIBUTED BY (id);
+INSERT INTO qp_misc_jiras.tablea VALUES (1, 'foo',2);
+INSERT INTO qp_misc_jiras.tableb VALUES (2, 'bar',4);
+CREATE TABLE qp_misc_jiras.tableC (uid1 INT, uid2 INT, uid3 INT) INHERITS (qp_misc_jiras.tableA, qp_misc_jiras.tableB) DISTRIBUTED BY (uid1, uid2, uid3);
 NOTICE:  merging multiple inherited definitions of column "lastname"
-INSERT INTO tableC VALUES (3, 'foobar', 5, 6, 7, 8, 9, 10);
+INSERT INTO qp_misc_jiras.tableC VALUES (3, 'foobar', 5, 6, 7, 8, 9, 10);
 -- Should display records from tableA and tableC.
-SELECT * FROM tableA ORDER BY ssn;
+SELECT * FROM qp_misc_jiras.tableA ORDER BY ssn;
  ssn | lastname | junk 
 -----+----------+------
    1 | foo      |    2
@@ -3216,7 +3218,7 @@ SELECT * FROM tableA ORDER BY ssn;
 (2 rows)
 
 -- Should display records from tableB and tableC.
-SELECT * FROM tableB ORDER BY id;
+SELECT * FROM qp_misc_jiras.tableB ORDER BY id;
  id | lastname | morejunk 
 ----+----------+----------
   2 | bar      |        4
@@ -3224,18 +3226,18 @@ SELECT * FROM tableB ORDER BY id;
 (2 rows)
 
 -- Should display only records from tableC.
-SELECT * FROM tableC;
+SELECT * FROM qp_misc_jiras.tableC;
  ssn | lastname | junk | id | morejunk | uid1 | uid2 | uid3 
 -----+----------+------+----+----------+------+------+------
    3 | foobar   |    5 |  6 |        7 |    8 |    9 |   10
 (1 row)
 
-CREATE TABLE tableD (a INT, b INT, c INT) DISTRIBUTED BY (a);
-INSERT INTO tableD VALUES (11, 12, 13);
-CREATE TABLE tableE (x INT) INHERITS (tableA, tableD) DISTRIBUTED BY (x);
-INSERT INTO tableE VALUES (1,'foo', -2, 11, 12, -13, 14);
+CREATE TABLE qp_misc_jiras.tableD (a INT, b INT, c INT) DISTRIBUTED BY (a);
+INSERT INTO qp_misc_jiras.tableD VALUES (11, 12, 13);
+CREATE TABLE qp_misc_jiras.tableE (x INT) INHERITS (qp_misc_jiras.tableA, qp_misc_jiras.tableD) DISTRIBUTED BY (x);
+INSERT INTO qp_misc_jiras.tableE VALUES (1,'foo', -2, 11, 12, -13, 14);
 -- Should display records from tableD and tableE.
-SELECT * FROM tableD ORDER BY a, c;
+SELECT * FROM qp_misc_jiras.tableD ORDER BY a, c;
  a  | b  |  c  
 ----+----+-----
  11 | 12 | -13
@@ -3243,14 +3245,14 @@ SELECT * FROM tableD ORDER BY a, c;
 (2 rows)
 
 -- Should display records from only table E.
-SELECT * FROM tableE;
+SELECT * FROM qp_misc_jiras.tableE;
  ssn | lastname | junk | a  | b  |  c  | x  
 -----+----------+------+----+----+-----+----
    1 | foo      |   -2 | 11 | 12 | -13 | 14
 (1 row)
 
 -- Should display records from tableA, tableC, and tableE.
-SELECT * FROM tableA ORDER BY ssn, junk;
+SELECT * FROM qp_misc_jiras.tableA ORDER BY ssn, junk;
  ssn | lastname | junk 
 -----+----------+------
    1 | foo      |   -2
@@ -3258,15 +3260,15 @@ SELECT * FROM tableA ORDER BY ssn, junk;
    3 | foobar   |    5
 (3 rows)
 
-CREATE TABLE tableAA (ssn INT, lastName VARCHAR, junk INT) DISTRIBUTED randomly;
-CREATE TABLE tableBB (id INT, lastName VARCHAR, moreJunk INT) DISTRIBUTED randomly;
-INSERT INTO tableAA VALUES (1, 'foo',2);
-INSERT INTO tableBB VALUES (2, 'bar',4);
-CREATE TABLE tableCC (uid1 INT, uid2 INT, uid3 INT) INHERITS (tableAA, tableBB) DISTRIBUTED randomly;
+CREATE TABLE qp_misc_jiras.tableAA (ssn INT, lastName VARCHAR, junk INT) DISTRIBUTED randomly;
+CREATE TABLE qp_misc_jiras.tableBB (id INT, lastName VARCHAR, moreJunk INT) DISTRIBUTED randomly;
+INSERT INTO qp_misc_jiras.tableAA VALUES (1, 'foo',2);
+INSERT INTO qp_misc_jiras.tableBB VALUES (2, 'bar',4);
+CREATE TABLE qp_misc_jiras.tableCC (uid1 INT, uid2 INT, uid3 INT) INHERITS (qp_misc_jiras.tableAA, qp_misc_jiras.tableBB) DISTRIBUTED randomly;
 NOTICE:  merging multiple inherited definitions of column "lastname"
-INSERT INTO tableCC VALUES (3, 'foobar', 5, 6, 7, 8, 9, 10);
+INSERT INTO qp_misc_jiras.tableCC VALUES (3, 'foobar', 5, 6, 7, 8, 9, 10);
 -- Should display records from tableAA and tableCC.
-SELECT * FROM tableAA ORDER BY ssn, junk;
+SELECT * FROM qp_misc_jiras.tableAA ORDER BY ssn, junk;
  ssn | lastname | junk 
 -----+----------+------
    1 | foo      |    2
@@ -3274,7 +3276,7 @@ SELECT * FROM tableAA ORDER BY ssn, junk;
 (2 rows)
 
 -- Should display records from tableBB and tableCC.
-SELECT * FROM tableBB ORDER BY id, moreJunk;
+SELECT * FROM qp_misc_jiras.tableBB ORDER BY id, moreJunk;
  id | lastname | morejunk 
 ----+----------+----------
   2 | bar      |        4
@@ -3282,7 +3284,7 @@ SELECT * FROM tableBB ORDER BY id, moreJunk;
 (2 rows)
 
 -- Should display records from only tableCC.
-SELECT * FROM tableCC;
+SELECT * FROM qp_misc_jiras.tableCC;
  ssn | lastname | junk | id | morejunk | uid1 | uid2 | uid3 
 -----+----------+------+----+----------+------+------+------
    3 | foobar   |    5 |  6 |        7 |    8 |    9 |   10
@@ -3303,12 +3305,12 @@ SELECT * FROM tableCC;
 --		==> IPs should be hashed to all segments now
 -- --------------------------------------------------------------------------------------
 -- start_ignore
-DROP TABLE IF EXISTS inet_ip_pairs CASCADE;
+DROP TABLE IF EXISTS qp_misc_jiras.inet_ip_pairs CASCADE;
 NOTICE:  table "inet_ip_pairs" does not exist, skipping
 set statement_timeout=0;
 set gp_interconnect_setup_timeout=7200;
 -- end_ignore
-CREATE TABLE inet_ip_pairs (saddr inet, daddr inet, instance_count int8);
+CREATE TABLE qp_misc_jiras.inet_ip_pairs (saddr inet, daddr inet, instance_count int8);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'saddr' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
 SELECT * FROM pg_indexes WHERE tablename='inet_ip_pairs';
@@ -3316,21 +3318,21 @@ SELECT * FROM pg_indexes WHERE tablename='inet_ip_pairs';
 ------------+-----------+-----------+------------+----------
 (0 rows)
 
-INSERT INTO inet_ip_pairs (saddr) SELECT (i%201 || '.' || i%11 || '.' || i%11 || '.' || i%100)::inet FROM generate_series(1,1000000) i;
+INSERT INTO qp_misc_jiras.inet_ip_pairs (saddr) SELECT (i%201 || '.' || i%11 || '.' || i%11 || '.' || i%100)::inet FROM generate_series(1,1000000) i;
 -- --------------------------------------------------------
 -- MPP-6870: CREATE INDEX caused Out-Of-Memory problem
 -- --------------------------------------------------------
-CREATE INDEX  inet_ip_pairs_idx1 ON  inet_ip_pairs (saddr);
+CREATE INDEX  inet_ip_pairs_idx1 ON  qp_misc_jiras.inet_ip_pairs (saddr);
 SELECT * FROM pg_indexes WHERE tablename='inet_ip_pairs';
- schemaname |   tablename   |     indexname      | tablespace |                               indexdef                               
-------------+---------------+--------------------+------------+----------------------------------------------------------------------
- public     | inet_ip_pairs | inet_ip_pairs_idx1 |            | CREATE INDEX inet_ip_pairs_idx1 ON inet_ip_pairs USING btree (saddr)
+  schemaname   |   tablename   |     indexname      | tablespace |                                      indexdef                                      
+---------------+---------------+--------------------+------------+------------------------------------------------------------------------------------
+ qp_misc_jiras | inet_ip_pairs | inet_ip_pairs_idx1 |            | CREATE INDEX inet_ip_pairs_idx1 ON qp_misc_jiras.inet_ip_pairs USING btree (saddr)
 (1 row)
 
 -- --------------------------------------------------------
 -- Data should be evenly distributed to multiple segments?
 -- --------------------------------------------------------
-SELECT gp_segment_id,count(*) FROM inet_ip_pairs GROUP BY 1;
+SELECT gp_segment_id,count(*) FROM qp_misc_jiras.inet_ip_pairs GROUP BY 1;
  gp_segment_id | count  
 ---------------+--------
              2 | 333466
@@ -3339,7 +3341,7 @@ SELECT gp_segment_id,count(*) FROM inet_ip_pairs GROUP BY 1;
 (3 rows)
 
 -- start_ignore
-DROP TABLE IF EXISTS inet_ip_pairs CASCADE;
+DROP TABLE IF EXISTS qp_misc_jiras.inet_ip_pairs CASCADE;
 -- end_ignore
 -- --------------------------------------------------------------------------------------
 -- COPYRIGHT: Copyright (c) 2010, Greenplum.  All rights reserved.
@@ -3656,8 +3658,8 @@ explain select count(distinct j) from (select t1.* from qp_misc_jiras.mpp5994_te
 (17 rows)
 
 explain select count(distinct j) from (select t1.* from qp_misc_jiras.mpp5994_test t1, qp_misc_jiras.mpp5994_test t2 where t1.i = t2.i) tmp group by j;
-                                                                                           QUERY PLAN                                                                                           
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                  QUERY PLAN                                                   
+---------------------------------------------------------------------------------------------------------------
  Gather Motion 3:1  (slice2; segments: 3)  (cost=21551.36..21563.86 rows=1000 width=12)
    ->  HashAggregate  (cost=21551.36..21563.86 rows=334 width=12)
          Group By: partial_aggregation.j
@@ -3679,8 +3681,8 @@ explain select count(distinct j) from (select t1.* from qp_misc_jiras.mpp5994_te
 set enable_groupagg=on;
 -- first query should use groupagg, and second one - hashagg
 explain select count(distinct j) from (select t1.* from qp_misc_jiras.mpp5994_test t1, qp_misc_jiras.mpp5994_test t2 where t1.j = t2.j) tmp group by j;
-                                                                                          QUERY PLAN                                                                                           
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                           QUERY PLAN                                                           
+--------------------------------------------------------------------------------------------------------------------------------
  Gather Motion 3:1  (slice3; segments: 3)  (cost=28696.41..28708.91 rows=1000 width=12)
    ->  HashAggregate  (cost=28696.41..28708.91 rows=334 width=12)
          Group By: partial_aggregation.j
@@ -3701,8 +3703,8 @@ explain select count(distinct j) from (select t1.* from qp_misc_jiras.mpp5994_te
 (17 rows)
 
 explain select count(distinct j) from (select t1.* from qp_misc_jiras.mpp5994_test t1, qp_misc_jiras.mpp5994_test t2 where t1.i = t2.i) tmp group by j;
-                                                                                          QUERY PLAN                                                                                           
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                  QUERY PLAN                                                   
+---------------------------------------------------------------------------------------------------------------
  Gather Motion 3:1  (slice2; segments: 3)  (cost=21551.36..21563.86 rows=1000 width=12)
    ->  HashAggregate  (cost=21551.36..21563.86 rows=334 width=12)
          Group By: partial_aggregation.j
@@ -3738,23 +3740,24 @@ show enable_indexscan;
 (1 row)
 
 explain analyze select reltablespace  from pg_class where oid = (select reltoastrelid from pg_class where relname='mpp_8205'); -- force_explain
-                                                                                                      QUERY PLAN                                                                                                       
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
  Index Scan using pg_class_oid_index on pg_class  (cost=200.27..400.54 rows=1 width=4)
    Index Cond: oid = $0
-   Rows out:  1 rows with 0.073 ms to first row, 0.074 ms to end, start offset by 0.129 ms.
+   Rows out:  1 rows with 0.025 ms to first row, 0.026 ms to end, start offset by 0.042 ms.
    InitPlan
-     ->  Index Scan using pg_class_relname_nsp_index on pg_class  (cost=0.00..200.33 rows=1 width=4)
+     ->  Index Scan using pg_class_relname_nsp_index on pg_class  (cost=0.00..200.27 rows=1 width=4)
            Index Cond: relname = 'mpp_8205'::name
-           Rows out:  1 rows with 0.037 ms to first row, 0.045 ms to end, start offset by 0.140 ms.
+           Rows out:  1 rows with 0.010 ms to first row, 0.012 ms to end of 2 scans, start offset by 0.044 ms.
  Slice statistics:
-   (slice0)    Executor memory: 138K bytes.
+   (slice0)    Executor memory: 113K bytes.
    (slice1)    Executor memory: 113K bytes.
  Statement statistics:
-   Memory used: 128000K bytes
- Settings:  enable_bitmapscan=off; enable_indexscan=on; enable_seqscan=off
- Total runtime: 0.206 ms
-(14 rows)
+   Memory used: 1000K bytes
+ Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_seqscan=off; optimizer=off; optimizer_segments=3
+ Optimizer status: legacy query optimizer
+ Total runtime: 0.068 ms
+(15 rows)
 
 select reltablespace from pg_class where oid = (select reltoastrelid from pg_class where relname='mpp_8205');
  reltablespace 
@@ -3773,13 +3776,13 @@ insert into qp_misc_jiras.mpp2976 select generate_series(1,1000);
 select pg_relation_size(tablename) from pg_tables where schemaname ='qp_misc_jiras' and tablename = 'mpp2976'; -- This should work
  pg_relation_size 
 ------------------
-            65536
+                 
 (1 row)
 
 select pg_relation_size(oid) from pg_class where relname = 'mpp2976'; -- This should work
  pg_relation_size 
 ------------------
-            65536
+            98304
 (1 row)
 
 -- end_ignore
@@ -3932,7 +3935,7 @@ ERROR:  table "utable" does not exist
 -- end_ignore
 reset statement_timeout;
 set statement_mem = '512MB';
-create table utable (
+create table qp_misc_jiras.utable (
     tstart timestamp,
     tfinish timestamp,
     utxt text,
@@ -3959,12 +3962,12 @@ from
 			        then unum 
 			        else 0 
 			        end
-			from utable
+			from qp_misc_jiras.utable
 		) x(tstart, utxt, unum)
 		
 		group by 1, 2
 	) y(period, utxt, usum);
-insert into utable values
+insert into qp_misc_jiras.utable values
     (timestamp '2009-05-01 01:01:10', timestamp '2009-05-01 02:01:10', 'a', 1.0),
     (timestamp '2009-05-01 02:01:10', timestamp '2009-05-01 01:01:10', 'a', 1.0),
     (timestamp '2009-05-01 02:01:10', timestamp '2009-05-01 03:01:10', 'a', 1.0),
@@ -4001,7 +4004,7 @@ group by 1;
 (2 rows)
 
 -- start_ignore
-drop table utable cascade;
+drop table qp_misc_jiras.utable cascade;
 NOTICE:  drop cascades to rule _RETURN on view uview
 NOTICE:  drop cascades to view uview
 -- end_ignore
@@ -4020,16 +4023,16 @@ NOTICE:  drop cascades to view uview
 -- --------------------------------------------------------------------------------------
 -- end_ignore
 -- start_ignore
-drop table foo_6325;
+drop table qp_misc_jiras.foo_6325;
 ERROR:  table "foo_6325" does not exist
-drop table bar_6325;
+drop table qp_misc_jiras.bar_6325;
 ERROR:  table "bar_6325" does not exist
 -- end_ignore
-CREATE TABLE foo_6325 (
+CREATE TABLE qp_misc_jiras.foo_6325 (
   foo_6325_attr text
 )
 DISTRIBUTED BY (foo_6325_attr);
-CREATE TABLE bar_6325 (
+CREATE TABLE qp_misc_jiras.bar_6325 (
   bar_6325_attr text
 )
 DISTRIBUTED RANDOMLY;
@@ -4038,12 +4041,12 @@ explain
 select  t1.bar_6325_attr::int, t1.foo_6325_attr 
 from (
 	select c.bar_6325_attr::int, a.foo_6325_attr
-	from foo_6325 a, bar_6325 c
+	from qp_misc_jiras.foo_6325 a, qp_misc_jiras.bar_6325 c
 	group by 1,2
      ) as t1 
 group by 1, 2;
-                                                                                                      QUERY PLAN                                                                                                       
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
  Gather Motion 3:1  (slice2; segments: 3)  (cost=0.16..0.17 rows=1 width=36)
    ->  HashAggregate  (cost=0.16..0.17 rows=1 width=36)
          Group By: "?column3?", a.foo_6325_attr
@@ -4054,13 +4057,13 @@ group by 1, 2;
                      ->  Materialize  (cost=0.04..0.07 rows=1 width=32)
                            ->  Broadcast Motion 3:3  (slice1; segments: 3)  (cost=0.00..0.04 rows=1 width=32)
                                  ->  Seq Scan on bar_6325 c  (cost=0.00..0.00 rows=1 width=32)
- Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_nestloop=on; enable_seqscan=off; gp_enable_agg_distinct=off; gp_enable_agg_distinct_pruning=off; optimizer_segments=3
+ Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_seqscan=off; optimizer=off; optimizer_segments=3
  Optimizer status: legacy query optimizer
 (12 rows)
 
 -- start_ignore
-drop table foo_6325;
-drop table bar_6325;
+drop table qp_misc_jiras.foo_6325;
+drop table qp_misc_jiras.bar_6325;
 DROP TABLE qp_misc_jiras.abc_mpp8621;
 ERROR:  table "abc_mpp8621" does not exist
 -- end_ignore
@@ -4222,15 +4225,15 @@ CREATE AGGREGATE median2(numeric) (
 -- Queries.
 --
 explain select x, "median"(y) from qp_misc_jiras.mpp9613 group by x; -- this should be allowed
-                                                                                                      QUERY PLAN                                                                                                       
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
  Gather Motion 3:1  (slice1; segments: 3)  (cost=28.17..38.09 rows=496 width=36)
    ->  GroupAggregate  (cost=28.17..38.09 rows=166 width=36)
          Group By: x
          ->  Sort  (cost=28.17..29.41 rows=166 width=36)
                Sort Key: x
                ->  Seq Scan on mpp9613  (cost=0.00..5.96 rows=166 width=36)
- Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_nestloop=on; enable_seqscan=off; gp_enable_agg_distinct=off; gp_enable_agg_distinct_pruning=off; optimizer_segments=3
+ Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_seqscan=off; optimizer=off; optimizer_segments=3
  Optimizer status: legacy query optimizer
 (8 rows)
 
@@ -4241,20 +4244,20 @@ select x, "median"(y) from qp_misc_jiras.mpp9613 group by x; -- this should be a
 (1 row)
 
 explain select x, median2(y) from qp_misc_jiras.mpp9613 group by x; -- this should be disallowed
-                                                                                                      QUERY PLAN                                                                                                       
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
  Gather Motion 3:1  (slice1; segments: 3)  (cost=28.17..38.09 rows=496 width=36)
    ->  GroupAggregate  (cost=28.17..38.09 rows=166 width=36)
          Group By: x
          ->  Sort  (cost=28.17..29.41 rows=166 width=36)
                Sort Key: x
                ->  Seq Scan on mpp9613  (cost=0.00..5.96 rows=166 width=36)
- Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_nestloop=on; enable_seqscan=off; gp_enable_agg_distinct=off; gp_enable_agg_distinct_pruning=off; optimizer_segments=3
+ Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_seqscan=off; optimizer=off; optimizer_segments=3
  Optimizer status: legacy query optimizer
 (8 rows)
 
 select x, median2(y) from qp_misc_jiras.mpp9613 group by x; -- this should be disallowed
-ERROR:  function cannot execute on segment because it accesses relation "qp_misc_jiras.mpp9613" (functions.c:155)  (seg0 slice1 nikos-mac:25432 pid=82882)
+ERROR:  function cannot execute on segment because it accesses relation "qp_misc_jiras.mpp9613" (functions.c:155)  (seg0 slice1 nikos-mac:25432 pid=94006)
 DETAIL:  SQL function "_final_median2" during startup
 -- start_ignore
 drop table qp_misc_jiras.mpp9613;
@@ -4309,13 +4312,13 @@ select * from pg_catalog.get_ao_distribution('qp_misc_jiras.mpp9706aoc'::regclas
          1 |       32
 (2 rows)
 
-create table test_1 (a int, b int, c int) with (appendonly=true, orientation=column,compresslevel=0,blocksize=32768,checksum=false);
+create table qp_misc_jiras.test_1 (a int, b int, c int) with (appendonly=true, orientation=column,compresslevel=0,blocksize=32768,checksum=false);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'a' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-insert into test_1 values (1,1,2);
-insert into test_1 values (1,1,3);
-insert into test_1 values (1,1,4);
-select count(*) from test_1;
+insert into qp_misc_jiras.test_1 values (1,1,2);
+insert into qp_misc_jiras.test_1 values (1,1,3);
+insert into qp_misc_jiras.test_1 values (1,1,4);
+select count(*) from qp_misc_jiras.test_1;
  count 
 -------
      3
@@ -4323,7 +4326,7 @@ select count(*) from test_1;
 
 set Debug_column_store_use_new_segment_filename_format=on;
 ERROR:  unrecognized configuration parameter "debug_column_store_use_new_segment_filename_format"
-select count(*) from test_1;
+select count(*) from qp_misc_jiras.test_1;
  count 
 -------
      3
@@ -4331,44 +4334,44 @@ select count(*) from test_1;
 
 set Debug_column_store_use_new_segment_filename_format=off;
 ERROR:  unrecognized configuration parameter "debug_column_store_use_new_segment_filename_format"
-alter table test_1 set distributed by (c);
+alter table qp_misc_jiras.test_1 set distributed by (c);
 set Debug_column_store_use_new_segment_filename_format=off;
 ERROR:  unrecognized configuration parameter "debug_column_store_use_new_segment_filename_format"
 set Debug_column_store_use_new_segment_filename_format=on;
 ERROR:  unrecognized configuration parameter "debug_column_store_use_new_segment_filename_format"
-select count(*) from test_1;
+select count(*) from qp_misc_jiras.test_1;
  count 
 -------
      3
 (1 row)
 
-drop table test_1;
-create table bmap2 (a varchar, b varchar);
+drop table qp_misc_jiras.test_1;
+create table qp_misc_jiras.bmap2 (a varchar, b varchar);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'a' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-insert into bmap2 values ('1', NULL);
-create index bmap2_index on bmap2 using bitmap (a, b);
-create table badbitmapindex (x int, y int, z int);
+insert into qp_misc_jiras.bmap2 values ('1', NULL);
+create index bmap2_index on qp_misc_jiras.bmap2 using bitmap (a, b);
+create table qp_misc_jiras.badbitmapindex (x int, y int, z int);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'x' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-insert into badbitmapindex values (0,0,0);
-insert into badbitmapindex values (0,0,NULL);
-create index badbitmapindex1 on badbitmapindex using bitmap(y,z);
-analyze badbitmapindex;
+insert into qp_misc_jiras.badbitmapindex values (0,0,0);
+insert into qp_misc_jiras.badbitmapindex values (0,0,NULL);
+create index badbitmapindex1 on qp_misc_jiras.badbitmapindex using bitmap(y,z);
+analyze qp_misc_jiras.badbitmapindex;
 --explain select * from badbitmapindex where y = 0 and z = 0;
-insert into badbitmapindex select generate_series(1,100*500);
-analyze badbitmapindex;
+insert into qp_misc_jiras.badbitmapindex select generate_series(1,100*500);
+analyze qp_misc_jiras.badbitmapindex;
 --explain select * from badbitmapindex where y = 0 and z = 0;
-select * from badbitmapindex where y = 0 and z = 0;
+select * from qp_misc_jiras.badbitmapindex where y = 0 and z = 0;
  x | y | z 
 ---+---+---
  0 | 0 | 0
 (1 row)
 
-drop index badbitmapindex1;
-drop index bmap2_index;
-drop table badbitmapindex;
-drop table bmap2;
+drop index qp_misc_jiras.badbitmapindex1;
+drop index qp_misc_jiras.bmap2_index;
+drop table qp_misc_jiras.badbitmapindex;
+drop table qp_misc_jiras.bmap2;
 -- start_ignore
 -- --------------------------------------------------------------------------
 -- QA-1203:
@@ -4377,45 +4380,45 @@ drop table bmap2;
 --               => if this statement fails everyday, reopen QA-1203
 -- --------------------------------------------------------------------------
 -- end_ignore
-CREATE TABLE execution_table (
+CREATE TABLE qp_misc_jiras.execution_table (
  id integer,
  status integer,
  execution_id integer
 )
 DISTRIBUTED BY (id);
-INSERT INTO execution_table SELECT * from generate_series(1, 1000000) i;
-CREATE TABLE execution_t2 AS
-SELECT id, execution_id, status FROM execution_table
+INSERT INTO qp_misc_jiras.execution_table SELECT * from generate_series(1, 1000000) i;
+CREATE TABLE qp_misc_jiras.execution_t2 AS
+SELECT id, execution_id, status FROM qp_misc_jiras.execution_table
 DISTRIBUTED BY (id);
-CREATE INDEX status_idx ON execution_table USING bitmap (status);
-SELECT status, count(*) FROM execution_table WHERE status = 1 group by status; -- correct: one line
+CREATE INDEX status_idx ON qp_misc_jiras.execution_table USING bitmap (status);
+SELECT status, count(*) FROM qp_misc_jiras.execution_table WHERE status = 1 group by status; -- correct: one line
  status | count 
 --------+-------
 (0 rows)
 
-UPDATE execution_table SET EXECUTION_ID = execution_t2.EXECUTION_ID FROM execution_t2 WHERE execution_table.id = execution_t2.id;
-SELECT status, count(*) FROM execution_table WHERE status = 1 group by status; -- correct: one line
+UPDATE qp_misc_jiras.execution_table SET EXECUTION_ID = execution_t2.EXECUTION_ID FROM qp_misc_jiras.execution_t2 WHERE execution_table.id = execution_t2.id;
+SELECT status, count(*) FROM qp_misc_jiras.execution_table WHERE status = 1 group by status; -- correct: one line
  status | count 
 --------+-------
 (0 rows)
 
-Alter table execution_table set distributed by (status, execution_id);
-Alter table execution_table set distributed by (status);
-VACUUM FULL execution_table; -- test VACUUM FULL, gives wrong results before the fix
-Alter table execution_table set distributed by (status);
+Alter table qp_misc_jiras.execution_table set distributed by (status, execution_id);
+Alter table qp_misc_jiras.execution_table set distributed by (status);
+VACUUM FULL qp_misc_jiras.execution_table; -- test VACUUM FULL, gives wrong results before the fix
+Alter table qp_misc_jiras.execution_table set distributed by (status);
 WARNING:  distribution policy of relation "execution_table" already set to (status)
 HINT:  Use ALTER TABLE "execution_table" SET WITH (REORGANIZE=TRUE) DISTRIBUTED BY (status) to force redistribution
-Alter table execution_t2 set distributed by (execution_id);
-Alter table execution_table set distributed by (status, execution_id);
-Alter table execution_table set distributed by (execution_id);
-Alter table execution_table set distributed by (id,execution_id);
-SELECT status, count(*) FROM execution_table WHERE status = 1 group by status;
+Alter table qp_misc_jiras.execution_t2 set distributed by (execution_id);
+Alter table qp_misc_jiras.execution_table set distributed by (status, execution_id);
+Alter table qp_misc_jiras.execution_table set distributed by (execution_id);
+Alter table qp_misc_jiras.execution_table set distributed by (id,execution_id);
+SELECT status, count(*) FROM qp_misc_jiras.execution_table WHERE status = 1 group by status;
  status | count 
 --------+-------
 (0 rows)
 
 set statement_timeout=60;
-Create index id_idx on execution_table using bitmap (id, execution_id);
+Create index id_idx on qp_misc_jiras.execution_table using bitmap (id, execution_id);
 ERROR:  canceling statement due to statement timeout
 set statement_timeout=0;
 Create table qp_misc_jiras.abc_mpp9083 (a int, b int);
@@ -4424,10 +4427,10 @@ HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sur
 set statement_timeout=20;
 DROP TABLE qp_misc_jiras.abc_mpp9083;
 set statement_timeout=0;
-DROP TABLE execution_table;
-DROP TABLE execution_t2;
+DROP TABLE qp_misc_jiras.execution_table;
+DROP TABLE qp_misc_jiras.execution_t2;
 set gp_debug_linger=3;
-CREATE TABLE ir_voice_sms_and_data (
+CREATE TABLE qp_misc_jiras.ir_voice_sms_and_data (
     imsi_number character varying(35),
     ir_call_country_name character varying(35),
     partner_operator_id character varying(15),
@@ -4441,7 +4444,7 @@ CREATE TABLE ir_voice_sms_and_data (
 explain select
 case when ir_call_type_group_code in ('H', 'VH', 'PCB') then 'Thailland'
 else 'Unidentify' end || 'a'
-from ir_voice_sms_and_data
+from qp_misc_jiras.ir_voice_sms_and_data
 group by 
 case when ir_call_supplementary_svc_code in ('S20','S21')
 then 'MO' else 'foo' end
@@ -4451,24 +4454,24 @@ else 'Unidentify' end
 ;
                                                                                                                                                    QUERY PLAN                                                                                                                                                   
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- Gather Motion 4:1  (slice2; segments: 4)  (cost=0.05..0.07 rows=1 width=54)
-   ->  HashAggregate  (cost=0.05..0.07 rows=1 width=54)
+ Gather Motion 3:1  (slice2; segments: 3)  (cost=0.05..0.07 rows=1 width=96)
+   ->  HashAggregate  (cost=0.05..0.07 rows=1 width=96)
          Group By: "?column1?", "?column2?"
-         ->  Redistribute Motion 4:4  (slice1; segments: 4)  (cost=0.01..0.04 rows=1 width=54)
+         ->  Redistribute Motion 3:3  (slice1; segments: 3)  (cost=0.01..0.04 rows=1 width=64)
                Hash Key: unnamed_attr_1, unnamed_attr_2
-               ->  HashAggregate  (cost=0.01..0.02 rows=1 width=54)
+               ->  HashAggregate  (cost=0.01..0.02 rows=1 width=64)
                      Group By: CASE WHEN ir_voice_sms_and_data.ir_call_supplementary_svc_code = ANY ('{S20,S21}'::bpchar[]) THEN 'MO'::text ELSE 'foo'::text END, CASE WHEN ir_voice_sms_and_data.ir_call_type_group_code::text = ANY ('{H,VH,PCB}'::text[]) THEN 'Thailland'::text ELSE 'Unidentify'::text END
                      ->  Seq Scan on ir_voice_sms_and_data  (cost=0.00..0.01 rows=1 width=54)
- Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_nestloop=on; enable_seqscan=off; gp_enable_agg_distinct=off; gp_enable_agg_distinct_pruning=off; optimizer_segments=3
+ Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_seqscan=off; optimizer=off; optimizer_segments=3
  Optimizer status: legacy query optimizer
 (10 rows)
 
-DROP TABLE ir_voice_sms_and_data;
+DROP TABLE qp_misc_jiras.ir_voice_sms_and_data;
 \echo '-- start_ignore'
 -- start_ignore
-drop table if exists x cascade;
+drop table if exists qp_misc_jiras.x cascade;
 NOTICE:  table "x" does not exist, skipping
-drop table if exists r cascade;
+drop table if exists qp_misc_jiras.r cascade;
 NOTICE:  table "r" does not exist, skipping
 \echo '-- end_ignore'
 -- end_ignore
@@ -4521,7 +4524,7 @@ drop table if exists qp_misc_jiras.r cascade;
 CREATE LANGUAGE plpgsql;
 NOTICE:  language "plpgsql" already exists, skipping
 -- end_ignore
-CREATE TABLE test_trig(id int, aaa text) DISTRIBUTED BY (id);
+CREATE TABLE qp_misc_jiras.test_trig(id int, aaa text) DISTRIBUTED BY (id);
 CREATE OR REPLACE FUNCTION fn_trig() RETURNS TRIGGER LANGUAGE plpgsql AS $$
 BEGIN
    NEW.aaa = NEW.aaa || '1';
@@ -4530,29 +4533,29 @@ RETURN NEW;
 END
 $$;
 CREATE TRIGGER test_trig_1
-BEFORE INSERT OR UPDATE ON test_trig
+BEFORE INSERT OR UPDATE ON qp_misc_jiras.test_trig
 FOR EACH ROW
     EXECUTE PROCEDURE fn_trig();
-INSERT INTO test_trig VALUES (1, 'aaa');
-NOTICE:  1  (seg0 nikos-mac:25432 pid=58674)
-SELECT * FROM test_trig;
+INSERT INTO qp_misc_jiras.test_trig VALUES (1, 'aaa');
+NOTICE:  1  (seg0 nikos-mac:25432 pid=94006)
+SELECT * FROM qp_misc_jiras.test_trig;
  id | aaa  
 ----+------
   1 | aaa1
 (1 row)
 
-UPDATE test_trig SET id = id;
-NOTICE:  1  (seg0 nikos-mac:25432 pid=58674)
-SELECT * FROM test_trig;
+UPDATE qp_misc_jiras.test_trig SET id = id;
+NOTICE:  1  (seg0 nikos-mac:25432 pid=94006)
+SELECT * FROM qp_misc_jiras.test_trig;
  id |  aaa  
 ----+-------
   1 | aaa11
 (1 row)
 
-DROP TABLE test_trig;
+DROP TABLE qp_misc_jiras.test_trig;
 DROP FUNCTION fn_trig();
 set gp_select_invisible=false;
-create table tbl1_mpp_11257 (
+create table qp_misc_jiras.tbl1_mpp_11257 (
  id            bigint,
 partition_key timestamp,
 distribution_key bigint not null,
@@ -4578,11 +4581,11 @@ select relname, attrnums as distribution_attributes from gp_distribution_policy 
 (3 rows)
 
 -- start_ignore
-alter table tbl1_mpp_11257 split default partition
+alter table qp_misc_jiras.tbl1_mpp_11257 split default partition
 start (date '2010-09-27' )
 end (date '2010-09-28')
 into (partition d_2010_09_27, partition default_partition);
-NOTICE:  exchanged partition "default_partition" of relation "tbl1_mpp_11257" with relation "pg_temp_339357"
+NOTICE:  exchanged partition "default_partition" of relation "tbl1_mpp_11257" with relation "pg_temp_37266"
 NOTICE:  dropped partition "default_partition" for relation "tbl1_mpp_11257"
 NOTICE:  CREATE TABLE will create partition "tbl1_mpp_11257_1_prt_d_2010_09_27" for table "tbl1_mpp_11257"
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "tbl1_mpp_11257_1_prt_d_2010_09_27_pkey" for table "tbl1_mpp_11257_1_prt_d_2010_09_27"
@@ -4598,7 +4601,7 @@ select relname, attrnums as distribution_attributes from gp_distribution_policy 
  tbl1_mpp_11257_1_prt_default_partition | {3}
 (4 rows)
 
-create table tbl2_mpp_11257 (
+create table qp_misc_jiras.tbl2_mpp_11257 (
 a int,
 b int,
 c int,
@@ -4615,20 +4618,20 @@ NOTICE:  CREATE TABLE will create partition "tbl2_mpp_11257_1_prt_p1" for table 
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "tbl2_mpp_11257_pkey" for table "tbl2_mpp_11257"
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "tbl2_mpp_11257_1_prt_default_partition_pkey" for table "tbl2_mpp_11257_1_prt_default_partition"
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "tbl2_mpp_11257_1_prt_p1_pkey" for table "tbl2_mpp_11257_1_prt_p1"
-insert into tbl2_mpp_11257 values(1,2,3);
-select * from tbl2_mpp_11257;
+insert into qp_misc_jiras.tbl2_mpp_11257 values(1,2,3);
+select * from qp_misc_jiras.tbl2_mpp_11257;
  a | b | c 
 ---+---+---
  1 | 2 | 3
 (1 row)
 
-delete from tbl2_mpp_11257 where a=1 and b=2 and c=3;
-select * from tbl2_mpp_11257;
+delete from qp_misc_jiras.tbl2_mpp_11257 where a=1 and b=2 and c=3;
+select * from qp_misc_jiras.tbl2_mpp_11257;
  a | b | c 
 ---+---+---
 (0 rows)
 
-insert into tbl2_mpp_11257 values(1,2,3); 
+insert into qp_misc_jiras.tbl2_mpp_11257 values(1,2,3); 
 select relname, attrnums as distribution_attributes from gp_distribution_policy p, pg_class c where p.localoid = c.oid and relname like 'tbl2_mpp_11257%' ;
                 relname                 | distribution_attributes 
 ----------------------------------------+-------------------------
@@ -4638,11 +4641,11 @@ select relname, attrnums as distribution_attributes from gp_distribution_policy 
 (3 rows)
 
 -- start_ignore
-alter table tbl2_mpp_11257 split default partition
+alter table qp_misc_jiras.tbl2_mpp_11257 split default partition
 start (3)
 end (4)
 into (partition p2, partition default_partition);
-NOTICE:  exchanged partition "default_partition" of relation "tbl2_mpp_11257" with relation "pg_temp_339720"
+NOTICE:  exchanged partition "default_partition" of relation "tbl2_mpp_11257" with relation "pg_temp_37629"
 NOTICE:  dropped partition "default_partition" for relation "tbl2_mpp_11257"
 NOTICE:  CREATE TABLE will create partition "tbl2_mpp_11257_1_prt_p2" for table "tbl2_mpp_11257"
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "tbl2_mpp_11257_1_prt_p2_pkey" for table "tbl2_mpp_11257_1_prt_p2"
@@ -4658,36 +4661,36 @@ select relname, attrnums as distribution_attributes from gp_distribution_policy 
  tbl2_mpp_11257_1_prt_default_partition | {1}
 (4 rows)
 
-delete from tbl2_mpp_11257 where a=1 and b=2 and c=3;
-select * from tbl2_mpp_11257;
+delete from qp_misc_jiras.tbl2_mpp_11257 where a=1 and b=2 and c=3;
+select * from qp_misc_jiras.tbl2_mpp_11257;
  a | b | c 
 ---+---+---
 (0 rows)
 
-drop table tbl1_mpp_11257;
-drop table tbl2_mpp_11257;
+drop table qp_misc_jiras.tbl1_mpp_11257;
+drop table qp_misc_jiras.tbl2_mpp_11257;
 set enable_seqscan=off;
 --
 -- Heap table. TidScan should be used.
 --
-drop table if exists test_heap;
+drop table if exists qp_misc_jiras.test_heap;
 NOTICE:  table "test_heap" does not exist, skipping
-create table test_heap (i int, j int);
+create table qp_misc_jiras.test_heap (i int, j int);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'i' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-insert into test_heap values (0, 0);
-explain select  * from test_heap where ctid='(0,1)' and gp_segment_id >= 0;
-                                                                                                      QUERY PLAN                                                                                                       
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+insert into qp_misc_jiras.test_heap values (0, 0);
+explain select  * from qp_misc_jiras.test_heap where ctid='(0,1)' and gp_segment_id >= 0;
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
  Gather Motion 3:1  (slice1; segments: 3)  (cost=0.00..100.02 rows=1 width=8)
    ->  Tid Scan on test_heap  (cost=0.00..100.02 rows=1 width=8)
          TID Cond: ctid = '(0,1)'::tid
          Filter: gp_segment_id >= 0
- Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_nestloop=on; enable_seqscan=off; gp_enable_agg_distinct=off; gp_enable_agg_distinct_pruning=off; optimizer_segments=3
+ Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_seqscan=off; optimizer=off; optimizer_segments=3
  Optimizer status: legacy query optimizer
 (6 rows)
 
-select  * from test_heap where ctid='(0,1)' and gp_segment_id >= 0;
+select  * from qp_misc_jiras.test_heap where ctid='(0,1)' and gp_segment_id >= 0;
  i | j 
 ---+---
  0 | 0
@@ -4696,23 +4699,23 @@ select  * from test_heap where ctid='(0,1)' and gp_segment_id >= 0;
 --
 -- AO table. TidScan should not be used.
 --
-drop table if exists test_ao;
+drop table if exists qp_misc_jiras.test_ao;
 NOTICE:  table "test_ao" does not exist, skipping
-create table test_ao (i int, j int) with (appendonly=true);
+create table qp_misc_jiras.test_ao (i int, j int) with (appendonly=true);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'i' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-insert into test_ao values (0, 0);
-explain select  * from test_ao where ctid='(33554432,32769)' and gp_segment_id >= 0;
-                                                                                                      QUERY PLAN                                                                                                       
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+insert into qp_misc_jiras.test_ao values (0, 0);
+explain select  * from qp_misc_jiras.test_ao where ctid='(33554432,32769)' and gp_segment_id >= 0;
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
  Gather Motion 3:1  (slice1; segments: 3)  (cost=0.00..13.91 rows=1 width=8)
    ->  Append-only Scan on test_ao  (cost=0.00..13.91 rows=1 width=8)
          Filter: gp_segment_id >= 0 AND ctid = '(33554432,32769)'::tid
- Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_nestloop=on; enable_seqscan=off; gp_enable_agg_distinct=off; gp_enable_agg_distinct_pruning=off; optimizer_segments=3
+ Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_seqscan=off; optimizer=off; optimizer_segments=3
  Optimizer status: legacy query optimizer
 (5 rows)
 
-select  * from test_ao where ctid='(33554432,32769)' and gp_segment_id >= 0;
+select  * from qp_misc_jiras.test_ao where ctid='(33554432,32769)' and gp_segment_id >= 0;
  i | j 
 ---+---
  0 | 0
@@ -4721,23 +4724,23 @@ select  * from test_ao where ctid='(33554432,32769)' and gp_segment_id >= 0;
 --
 -- CO table. TidScan should not be used.
 --
-drop table if exists test_co;
+drop table if exists qp_misc_jiras.test_co;
 NOTICE:  table "test_co" does not exist, skipping
-create table test_co (i int, j int) with (appendonly=true, orientation=column);
+create table qp_misc_jiras.test_co (i int, j int) with (appendonly=true, orientation=column);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'i' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-insert into test_co values (0, 0);
-explain select  * from test_co where ctid='(33554432,32769)' and gp_segment_id >= 0;
-                                                                                                      QUERY PLAN                                                                                                       
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+insert into qp_misc_jiras.test_co values (0, 0);
+explain select  * from qp_misc_jiras.test_co where ctid='(33554432,32769)' and gp_segment_id >= 0;
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
  Gather Motion 3:1  (slice1; segments: 3)  (cost=0.00..13.91 rows=1 width=8)
    ->  Append-only Columnar Scan on test_co  (cost=0.00..13.91 rows=1 width=8)
          Filter: gp_segment_id >= 0 AND ctid = '(33554432,32769)'::tid
- Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_nestloop=on; enable_seqscan=off; gp_enable_agg_distinct=off; gp_enable_agg_distinct_pruning=off; optimizer_segments=3
+ Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_seqscan=off; optimizer=off; optimizer_segments=3
  Optimizer status: legacy query optimizer
 (5 rows)
 
-select  * from test_co where ctid='(33554432,32769)' and gp_segment_id >= 0;
+select  * from qp_misc_jiras.test_co where ctid='(33554432,32769)' and gp_segment_id >= 0;
  i | j 
 ---+---
  0 | 0
@@ -4756,26 +4759,26 @@ NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'i' as
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
 insert into qp_misc_jiras.test_mpp10856 select i, i from generate_series(0, 999999) i;
 explain analyze select count(*) from qp_misc_jiras.test_mpp10856;
-                                                                                                      QUERY PLAN                                                                                                       
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                        QUERY PLAN                                                                         
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=4316.91..4316.92 rows=1 width=8)
-   Rows out:  1 rows with 179 ms to end, start offset by 0.182 ms.
+   Rows out:  1 rows with 70 ms to end, start offset by 0.190 ms.
    ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=4316.84..4316.89 rows=1 width=8)
-         Rows out:  3 rows at destination with 179 ms to end, start offset by 0.182 ms.
+         Rows out:  3 rows at destination with 69 ms to first row, 70 ms to end, start offset by 0.190 ms.
          ->  Aggregate  (cost=4316.84..4316.85 rows=1 width=8)
-               Rows out:  Avg 1.0 rows x 3 workers.  Max 1 rows (seg0) with 178 ms to end, start offset by 0.420 ms.
-               allstat: seg_firststart_total_ntuples/seg0_0.420 ms_178 ms_1/seg1_0.418 ms_178 ms_1/seg2_0.420 ms_178 ms_1//end
+               Rows out:  Avg 1.0 rows x 3 workers.  Max 1 rows (seg0) with 70 ms to end, start offset by 0.432 ms.
+               allstat: seg_firststart_total_ntuples/seg0_0.432 ms_70 ms_1/seg1_0.431 ms_68 ms_1/seg2_0.431 ms_68 ms_1//end
                ->  Seq Scan on test_mpp10856  (cost=0.00..3526.87 rows=105329 width=0)
-                     Rows out:  Avg 333333.3 rows x 3 workers.  Max 333384 rows (seg2) with 0.006 ms to first row, 150 ms to end, start offset by 0.420 ms.
-                     allstat: seg_firststart_total_ntuples/seg0_0.420 ms_150 ms_333357/seg1_0.418 ms_150 ms_333259/seg2_0.420 ms_150 ms_333384//end
+                     Rows out:  Avg 333333.3 rows x 3 workers.  Max 333384 rows (seg2) with 0.027 ms to first row, 36 ms to end, start offset by 0.431 ms.
+                     allstat: seg_firststart_total_ntuples/seg0_0.432 ms_34 ms_333357/seg1_0.431 ms_33 ms_333259/seg2_0.431 ms_36 ms_333384//end
  Slice statistics:
-   (slice0)    Executor memory: 197K bytes.
-   (slice1)    Executor memory: 194K bytes avg x 4 workers, 194K bytes max (seg0).
+   (slice0)    Executor memory: 159K bytes.
+   (slice1)    Executor memory: 163K bytes avg x 3 workers, 163K bytes max (seg0).
  Statement statistics:
-   Memory used: 1000K bytes
- Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_nestloop=on; enable_seqscan=off; gp_enable_agg_distinct=off; gp_enable_agg_distinct_pruning=off; optimizer_segments=3
+   Memory used: 128000K bytes
+ Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_seqscan=off; optimizer=off; optimizer_segments=3
  Optimizer status: legacy query optimizer
- Total runtime: 190.280 ms
+ Total runtime: 70.739 ms
 (18 rows)
 
 drop table if exists qp_misc_jiras.test_mpp10856;
@@ -4887,62 +4890,69 @@ NOTICE:  drop cascades to table schema3.foo4
 	motion you get "rows=500" and "Rows out:  1000 rows at destination". That
 	output should be fine.
 	*/
-drop table if exists r;
+drop table if exists qp_misc_jiras.r;
 NOTICE:  table "r" does not exist, skipping
-drop table if exists s;
+drop table if exists qp_misc_jiras.s;
 NOTICE:  table "s" does not exist, skipping
 -- end_ignore
-create table r(a int, b int);
+create table qp_misc_jiras.r(a int, b int);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'a' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-insert into r select generate_series(1,1000), generate_series(1,1000);
-create table s(a int, b int);
+insert into qp_misc_jiras.r select generate_series(1,1000), generate_series(1,1000);
+create table qp_misc_jiras.s(a int, b int);
 NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause -- Using column named 'a' as the Greenplum Database data distribution key for this table.
 HINT:  The 'DISTRIBUTED BY' clause determines the distribution of data. Make sure column(s) chosen are the optimal data distribution key to minimize skew.
-insert into s select generate_series(1,1000), generate_series(1,1000);
+insert into qp_misc_jiras.s select generate_series(1,1000), generate_series(1,1000);
 analyze;
-explain select * from r;
-                                                                                                      QUERY PLAN                                                                                                       
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+explain select * from qp_misc_jiras.r;
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
  Gather Motion 3:1  (slice1; segments: 3)  (cost=0.00..13.00 rows=1000 width=8)
    ->  Seq Scan on r  (cost=0.00..13.00 rows=334 width=8)
- Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_nestloop=on; enable_seqscan=off; gp_enable_agg_distinct=off; gp_enable_agg_distinct_pruning=off; optimizer_segments=3
+ Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_seqscan=off; optimizer=off; optimizer_segments=3
  Optimizer status: legacy query optimizer
 (4 rows)
 
-explain analyze select * from r,s where r.a=s.b;
-                                                                                                      QUERY PLAN                                                                                                       
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- Gather Motion 2:1  (slice2; segments: 2)  (cost=24.50..71.50 rows=500 width=16)
-   Rows out:  1000 rows at destination with 43 ms to first row, 77 ms to end, start offset by 0.487 ms.
-   ->  Hash Join  (cost=24.50..71.50 rows=500 width=16)
+explain analyze select * from qp_misc_jiras.r,qp_misc_jiras.s where r.a=s.b;
+                                                                          QUERY PLAN                                                                          
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice2; segments: 3)  (cost=25.50..73.50 rows=1000 width=16)
+   Rows out:  1000 rows at destination with 78 ms to first row, 127 ms to end, start offset by 0.204 ms.
+   ->  Hash Join  (cost=25.50..73.50 rows=334 width=16)
          Hash Cond: s.b = r.a
-         Rows out:  Avg 500.0 rows x 2 workers.  Max 501 rows (seg0) with 63 ms to first row, 74 ms to end, start offset by 0.992 ms.
-         Executor memory:  12K bytes avg, 12K bytes max (seg0).
-         Work_mem used:  12K bytes avg, 12K bytes max (seg0).
-         (seg0)   Hash chain length 1.0 avg, 1 max, using 501 of 1048589 buckets.
-         ->  Redistribute Motion 2:2  (slice1; segments: 2)  (cost=0.00..32.00 rows=500 width=8)
+         Rows out:  Avg 333.3 rows x 3 workers.  Max 342 rows (seg1) with 86 ms to first row, 126 ms to end, start offset by 0.434 ms.
+         Executor memory:  11K bytes avg, 11K bytes max (seg1).
+         Work_mem used:  11K bytes avg, 11K bytes max (seg1). Workfile: (0 spilling, 0 reused)
+         (seg1)   Hash chain length 1.0 avg, 1 max, using 342 of 8388619 buckets.
+         allstat: seg_firststart_total_ntuples/seg0_0.408 ms_116 ms_321/seg1_0.434 ms_126 ms_342/seg2_0.446 ms_119 ms_337//end
+         ->  Redistribute Motion 3:3  (slice1; segments: 3)  (cost=0.00..33.00 rows=334 width=8)
                Hash Key: s.b
-               Rows out:  Avg 500.0 rows x 2 workers at destination.  Max 501 rows (seg0) with 0.126 ms to first row, 0.263 ms to end, start offset by 64 ms.
-               ->  Seq Scan on s  (cost=0.00..12.00 rows=500 width=8)
-                     Rows out:  Avg 500.0 rows x 2 workers.  Max 501 rows (seg0) with 0.101 ms to first row, 0.150 ms to end, start offset by 2.265 ms.
-         ->  Hash  (cost=12.00..12.00 rows=500 width=8)
-               Rows in:  Avg 500.0 rows x 2 workers.  Max 501 rows (seg0) with 0.258 ms to end, start offset by 64 ms.
-               ->  Seq Scan on r  (cost=0.00..12.00 rows=500 width=8)
-                     Rows out:  Avg 500.0 rows x 2 workers.  Max 501 rows (seg0) with 0.044 ms to first row, 0.097 ms to end, start offset by 64 ms.
+               Rows out:  Avg 333.3 rows x 3 workers at destination.  Max 342 rows (seg1) with 0.114 ms to first row, 0.177 ms to end, start offset by 86 ms.
+               allstat: seg_firststart_total_ntuples/seg0_78 ms_0.142 ms_321/seg1_86 ms_0.177 ms_342/seg2_80 ms_0.135 ms_337//end
+               ->  Seq Scan on s  (cost=0.00..13.00 rows=334 width=8)
+                     Rows out:  Avg 333.3 rows x 3 workers.  Max 342 rows (seg1) with 1.982 ms to first row, 2.023 ms to end, start offset by 2.147 ms.
+                     allstat: seg_firststart_total_ntuples/seg0_0.822 ms_2.413 ms_321/seg1_2.147 ms_2.023 ms_342/seg2_2.115 ms_1.947 ms_337//end
+         ->  Hash  (cost=13.00..13.00 rows=334 width=8)
+               Rows in:  Avg 333.3 rows x 3 workers.  Max 342 rows (seg1) with 0.247 ms to end, start offset by 86 ms.
+               allstat: seg_firststart_total_ntuples/seg0_78 ms_0.215 ms_321/seg1_86 ms_0.247 ms_342/seg2_80 ms_0.173 ms_337//end
+               ->  Seq Scan on r  (cost=0.00..13.00 rows=334 width=8)
+                     Rows out:  Avg 333.3 rows x 3 workers.  Max 342 rows (seg1) with 0.048 ms to first row, 0.099 ms to end, start offset by 86 ms.
+                     allstat: seg_firststart_total_ntuples/seg0_78 ms_0.073 ms_321/seg1_86 ms_0.099 ms_342/seg2_80 ms_0.065 ms_337//end
  Slice statistics:
-   (slice0)    Executor memory: 220K bytes.
-   (slice1)    Executor memory: 183K bytes avg x 2 workers, 183K bytes max (seg0).
-   (slice2)    Executor memory: 12595K bytes avg x 2 workers, 12595K bytes max (seg0).  Work_mem: 12K bytes max.
+   (slice0)    Executor memory: 267K bytes.
+   (slice1)    Executor memory: 193K bytes avg x 3 workers, 193K bytes max (seg0).
+   (slice2)    Executor memory: 131366K bytes avg x 3 workers, 131387K bytes max (seg1).  Work_mem: 11K bytes max.
  Statement statistics:
-   Memory used: 128000K bytes
- Total runtime: 77.831 ms
-(24 rows)
+   Memory used: 1945600K bytes
+ Settings:  enable_bitmapscan=off; enable_groupagg=on; enable_indexscan=on; enable_seqscan=off; optimizer=off; optimizer_segments=3
+ Optimizer status: legacy query optimizer
+ Total runtime: 127.268 ms
+(31 rows)
 
-drop table r;
-drop table s;
+drop table qp_misc_jiras.r;
+drop table qp_misc_jiras.s;
 -- COPY command to return proper error message when extra data in the file
-create table eloginfo0118
+create table qp_misc_jiras.eloginfo0118
   (
     sev          text,
     msg          text,
@@ -4950,7 +4960,7 @@ create table eloginfo0118
     linenum      int
 )
 distributed by (sev);
-create table eloginfo0118_int
+create table qp_misc_jiras.eloginfo0118_int
   (
     id           int,
     sev          text,
@@ -4959,8 +4969,8 @@ create table eloginfo0118_int
     linenum      int
 )
 distributed by (id);
-drop table eloginfo0118;
-drop table eloginfo0118_int;
+drop table qp_misc_jiras.eloginfo0118;
+drop table qp_misc_jiras.eloginfo0118_int;
 --to_date had issues when there were padding(space) in front of the string
 select to_date ('20010101','YYYYMMDD');
   to_date   
@@ -5091,16 +5101,16 @@ insert into qp_misc_jiras.mpp13879_1 select generate_series(1,10);
 select * from qp_misc_jiras.mpp13879_1;
  a  
 ----
-  1
   3
-  5
-  7
-  9
-  2
   4
+  5
   6
+  7
   8
+  9
  10
+  1
+  2
 (10 rows)
 
 select a, max(a) over (order by a range between current row and 2 following) as max from qp_misc_jiras.mpp13879_1;
@@ -5126,15 +5136,15 @@ select * from qp_misc_jiras.mpp13879_2;
  a  
 ----
   1
-  3
-  5
-  7
-  9
-  2
   4
-  6
-  8
+  7
  10
+  2
+  5
+  8
+  3
+  6
+  9
 (10 rows)
 
 select a, max(a) over (order by a range between current row and 2 following) as max from qp_misc_jiras.mpp13879_2;
@@ -5154,14 +5164,14 @@ select a, max(a) over (order by a range between current row and 2 following) as 
 
 drop table qp_misc_jiras.mpp13879_1;
 drop table qp_misc_jiras.mpp13879_2;
-drop table if exists esc176_1;
+drop table if exists qp_misc_jiras.esc176_1;
 NOTICE:  table "esc176_1" does not exist, skipping
-create table esc176_1 (id integer, seq integer, val double precision, clickdate timestamp without time zone) distributed by (id);
-insert into esc176_1 values (1,1,0.2,CURRENT_TIMESTAMP);
-insert into esc176_1 values (1,2,0.1,CURRENT_TIMESTAMP);
-insert into esc176_1 values (1,3,0.5,CURRENT_TIMESTAMP);
-insert into esc176_1 values (1,4,0.7,CURRENT_TIMESTAMP);
-select id, seq, sum (val) over (partition by id order by clickdate range between interval '0 seconds' following and interval '1000 seconds' following) from esc176_1;
+create table qp_misc_jiras.esc176_1 (id integer, seq integer, val double precision, clickdate timestamp without time zone) distributed by (id);
+insert into qp_misc_jiras.esc176_1 values (1,1,0.2,CURRENT_TIMESTAMP);
+insert into qp_misc_jiras.esc176_1 values (1,2,0.1,CURRENT_TIMESTAMP);
+insert into qp_misc_jiras.esc176_1 values (1,3,0.5,CURRENT_TIMESTAMP);
+insert into qp_misc_jiras.esc176_1 values (1,4,0.7,CURRENT_TIMESTAMP);
+select id, seq, sum (val) over (partition by id order by clickdate range between interval '0 seconds' following and interval '1000 seconds' following) from qp_misc_jiras.esc176_1;
  id | seq | sum 
 ----+-----+-----
   1 |   1 | 1.5
@@ -5170,7 +5180,7 @@ select id, seq, sum (val) over (partition by id order by clickdate range between
   1 |   4 | 0.7
 (4 rows)
 
-select id, seq, sum (val) over (partition by id order by clickdate range between interval '0 seconds' preceding and interval '1000 seconds' following) from esc176_1;
+select id, seq, sum (val) over (partition by id order by clickdate range between interval '0 seconds' preceding and interval '1000 seconds' following) from qp_misc_jiras.esc176_1;
  id | seq | sum 
 ----+-----+-----
   1 |   1 | 1.5
@@ -5179,7 +5189,7 @@ select id, seq, sum (val) over (partition by id order by clickdate range between
   1 |   4 | 0.7
 (4 rows)
 
-select id, seq, sum(val) over (partition by id order by seq::numeric range between 0 following and 10 following), val from esc176_1;
+select id, seq, sum(val) over (partition by id order by seq::numeric range between 0 following and 10 following), val from qp_misc_jiras.esc176_1;
  id | seq | sum | val 
 ----+-----+-----+-----
   1 |   1 | 1.5 | 0.2
@@ -5188,7 +5198,7 @@ select id, seq, sum(val) over (partition by id order by seq::numeric range betwe
   1 |   4 | 0.7 | 0.7
 (4 rows)
 
-select id, seq, sum(val) over (partition by id order by seq::numeric range between 10 preceding and 0 preceding), val from esc176_1;
+select id, seq, sum(val) over (partition by id order by seq::numeric range between 10 preceding and 0 preceding), val from qp_misc_jiras.esc176_1;
  id | seq | sum | val 
 ----+-----+-----+-----
   1 |   1 | 0.2 | 0.2
@@ -5197,16 +5207,16 @@ select id, seq, sum(val) over (partition by id order by seq::numeric range betwe
   1 |   4 | 1.5 | 0.7
 (4 rows)
 
-insert into esc176_1 values (1,9,0.3,CURRENT_TIMESTAMP);
-insert into esc176_1 values (1,10,0.4,CURRENT_TIMESTAMP);
-insert into esc176_1 values (1,11,0.6, CURRENT_TIMESTAMP);
-insert into esc176_1 select * from esc176_1;
-insert into esc176_1 select * from esc176_1;
-insert into esc176_1 select * from esc176_1;
-insert into esc176_1 values (1,9,0.3, CURRENT_TIMESTAMP);
-insert into esc176_1 values (1,10,0.4,CURRENT_TIMESTAMP);
-insert into esc176_1 values (1,11,0.6,CURRENT_TIMESTAMP);
-select id, seq, sum (val) over (partition by id order by clickdate range between interval '0 seconds' following and interval '1000 seconds' following) from esc176_1;
+insert into qp_misc_jiras.esc176_1 values (1,9,0.3,CURRENT_TIMESTAMP);
+insert into qp_misc_jiras.esc176_1 values (1,10,0.4,CURRENT_TIMESTAMP);
+insert into qp_misc_jiras.esc176_1 values (1,11,0.6, CURRENT_TIMESTAMP);
+insert into qp_misc_jiras.esc176_1 select * from qp_misc_jiras.esc176_1;
+insert into qp_misc_jiras.esc176_1 select * from qp_misc_jiras.esc176_1;
+insert into qp_misc_jiras.esc176_1 select * from qp_misc_jiras.esc176_1;
+insert into qp_misc_jiras.esc176_1 values (1,9,0.3, CURRENT_TIMESTAMP);
+insert into qp_misc_jiras.esc176_1 values (1,10,0.4,CURRENT_TIMESTAMP);
+insert into qp_misc_jiras.esc176_1 values (1,11,0.6,CURRENT_TIMESTAMP);
+select id, seq, sum (val) over (partition by id order by clickdate range between interval '0 seconds' following and interval '1000 seconds' following) from qp_misc_jiras.esc176_1;
  id | seq |        sum        
 ----+-----+-------------------
   1 |   1 |              23.7
@@ -5270,7 +5280,7 @@ select id, seq, sum (val) over (partition by id order by clickdate range between
   1 |  11 | 0.600000000000001
 (59 rows)
 
-select id, seq, sum (val) over (partition by id order by clickdate range between interval '0 seconds' preceding and interval '1000 seconds' following) from esc176_1;
+select id, seq, sum (val) over (partition by id order by clickdate range between interval '0 seconds' preceding and interval '1000 seconds' following) from qp_misc_jiras.esc176_1;
  id | seq |        sum        
 ----+-----+-------------------
   1 |   1 |              23.7
@@ -5334,7 +5344,7 @@ select id, seq, sum (val) over (partition by id order by clickdate range between
   1 |  11 | 0.600000000000001
 (59 rows)
 
-select id, seq, sum(val) over (partition by id order by seq::numeric range between 0 following and 10 following), val from esc176_1;
+select id, seq, sum(val) over (partition by id order by seq::numeric range between 0 following and 10 following), val from qp_misc_jiras.esc176_1;
  id | seq |       sum        | val 
 ----+-----+------------------+-----
   1 |   1 |             23.7 | 0.2
@@ -5398,7 +5408,7 @@ select id, seq, sum(val) over (partition by id order by seq::numeric range betwe
   1 |  11 | 5.40000000000001 | 0.6
 (59 rows)
 
-select id, seq, sum(val) over (partition by id order by seq::numeric range between 10 preceding and 0 preceding), val from esc176_1;
+select id, seq, sum(val) over (partition by id order by seq::numeric range between 10 preceding and 0 preceding), val from qp_misc_jiras.esc176_1;
  id | seq | sum  | val 
 ----+-----+------+-----
   1 |   1 |  1.6 | 0.2
@@ -5462,7 +5472,7 @@ select id, seq, sum(val) over (partition by id order by seq::numeric range betwe
   1 |  11 | 23.7 | 0.6
 (59 rows)
 
-drop table esc176_1;
+drop table qp_misc_jiras.esc176_1;
 -- start_ignore
 drop table if exists qp_misc_jiras.mpp13491_h;
 NOTICE:  table "mpp13491_h" does not exist, skipping
@@ -5540,10 +5550,22 @@ select test();
 drop schema qp_misc_jiras cascade;
 NOTICE:  drop cascades to table qp_misc_jiras._mpp10050_test
 NOTICE:  drop cascades to table qp_misc_jiras.mpp13409_test
+NOTICE:  drop cascades to append only columnar table qp_misc_jiras.test_co
+NOTICE:  drop cascades to append only table qp_misc_jiras.test_ao
+NOTICE:  drop cascades to table qp_misc_jiras.test_heap
 NOTICE:  drop cascades to append only columnar table qp_misc_jiras.mpp9706aoc
 NOTICE:  drop cascades to append only table qp_misc_jiras.mpp9706ao
+NOTICE:  drop cascades to table qp_misc_jiras.tablecc
+NOTICE:  drop cascades to table qp_misc_jiras.tablebb
+NOTICE:  drop cascades to table qp_misc_jiras.tableaa
+NOTICE:  drop cascades to table qp_misc_jiras.tablee
+NOTICE:  drop cascades to table qp_misc_jiras.tabled
+NOTICE:  drop cascades to table qp_misc_jiras.tablec
+NOTICE:  drop cascades to table qp_misc_jiras.tableb
+NOTICE:  drop cascades to table qp_misc_jiras.tablea
 NOTICE:  drop cascades to table qp_misc_jiras.mpp7404_t2
 NOTICE:  drop cascades to table qp_misc_jiras.mpp7404_t1
+NOTICE:  drop cascades to table qp_misc_jiras.foo
 NOTICE:  drop cascades to table qp_misc_jiras.mpp6027_test
 NOTICE:  drop cascades to external table qp_misc_jiras.mpp3301_bar
 NOTICE:  drop cascades to table qp_misc_jiras.mpp3301_foo
