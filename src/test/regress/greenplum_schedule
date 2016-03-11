@@ -21,8 +21,6 @@ test: filter gpctas gpdist matrix toast sublink sirv_functions table_functions o
 
 test: dispatch
 
-test: qp_misc_jiras
-
 # 'segspace' relies on the segment spill space to be 0, and uses fault injectors
 # so it needs to be in a group by itself
 test: segspace
@@ -83,7 +81,7 @@ test: aggregate_with_groupingsets gp_optimizer
 
 test: nested_case_null
 
-test: qp_olap_mdqa qp_with_clause qp_misc
+test: qp_olap_mdqa qp_with_clause qp_misc qp_misc_jiras
 
 test: bfv_cte bfv_joins bfv_statistic bfv_subquery bfv_planner bfv_legacy
 

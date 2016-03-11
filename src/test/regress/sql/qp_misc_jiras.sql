@@ -1227,8 +1227,8 @@ drop table qp_misc_jiras.mpp6833_anl;
 drop table qp_misc_jiras.mpp6833_vac;
 -- actual query
 
-drop table if exists qp_misc_jiras.foo;
-create table qp_misc_jiras.foo(x int) distributed by (x);
+drop table if exists qp_misc_jiras_foo;
+create table qp_misc_jiras_foo(x int) distributed by (x);
 
 SELECT t.attrnums, a.attname, pg_catalog.format_type(a.atttypid, a.atttypmod),
 a.attnotnull, a.attnum, pg_catalog.col_description(a.attrelid, a.attnum)
@@ -1236,18 +1236,18 @@ FROM pg_catalog.pg_class c
 LEFT outer JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
 left outer join pg_catalog.gp_distribution_policy t on localoid = c.oid
 left outer join pg_catalog.pg_attribute a on a.attrelid = c.oid and a.attnum in (select unnest(t.attrnums))
-WHERE c.relname ~ '^(foo)$';
+WHERE c.relname ~ '^(qp_misc_jiras_foo)$';
 
 
 -- previously supported query
 
-drop table if exists qp_misc_jiras.bar;
-create table qp_misc_jiras.bar (t int, d int, g int);
+drop table if exists qp_misc_jiras_bar;
+create table qp_misc_jiras_bar (t int, d int, g int);
 
-insert into qp_misc_jiras.bar values(1,2,3);
-insert into qp_misc_jiras.bar values(4,5,6);
+insert into qp_misc_jiras_bar values(1,2,3);
+insert into qp_misc_jiras_bar values(4,5,6);
 
-select a.t from qp_misc_jiras.bar a where d in(select d from qp_misc_jiras.bar b where a.g=b.g) order by a.t;
+select a.t from qp_misc_jiras_bar a where d in(select d from qp_misc_jiras_bar b where a.g=b.g) order by a.t;
 -- Various AO/CO util functions
 drop table if exists qp_misc_jiras.mpp7126_ao;
 drop table if exists qp_misc_jiras.mpp7126_ao_zlib3;
