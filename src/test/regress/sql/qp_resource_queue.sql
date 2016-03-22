@@ -324,3 +324,4 @@ select tbl16369_func1(),tbl16369_func2(),tbl16369_func4(),tbl16369_func5(),tbl16
 -- start_ignore
 drop schema qp_resource_queue cascade;
 -- end_ignore
+RESET ALL;

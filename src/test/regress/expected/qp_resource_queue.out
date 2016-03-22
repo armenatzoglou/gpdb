@@ -596,3 +596,4 @@ NOTICE:  drop cascades to table tbl16369_test1
 NOTICE:  drop cascades to table tbl16369_zipcode_gis
 NOTICE:  drop cascades to table tbl16369_test
 -- end_ignore
+RESET ALL;
