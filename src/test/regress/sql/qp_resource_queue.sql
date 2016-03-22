@@ -328,4 +328,3 @@ drop role if exists tbl16369_user3;
 drop resource queue tbl16369_resq1;
 drop resource queue tbl16369_resq3;
 -- end_ignore
-RESET ALL;
