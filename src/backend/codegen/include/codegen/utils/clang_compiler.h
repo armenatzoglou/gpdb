@@ -216,7 +216,8 @@ class ConstantPrinter<
     // with the right precision.
     if (sizeof(IntType) > sizeof(int)) {
       literal.push_back('l');
-      if (sizeof(IntType) > sizeof(long)) {  // NOLINT(runtime/int)
+      if (sizeof(IntType) > sizeof(long) || std::is_same<IntType,
+    		  long long>::value) {  // NOLINT(runtime/int)
         literal.push_back('l');
       }
     }
