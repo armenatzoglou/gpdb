@@ -579,6 +579,7 @@ bool		optimizer_prefer_scalar_dqa_multistage_agg;
  * GUCs related to code generation with Balerion.
  **/
 bool		codegen;
+bool  codegen_jit;
 
 /* Security */
 bool		gp_reject_internal_tcp_conn = true;
@@ -3426,6 +3427,16 @@ struct config_bool ConfigureNamesBool_gp[] =
 		},
 		&codegen,
 		true, NULL, NULL
+	},
+
+	{
+	  {"codegen_jit", PGC_USERSET, DEVELOPER_OPTIONS,
+	    gettext_noop("Enable just-in-time code generation."),
+	    NULL,
+	    GUC_NO_SHOW_ALL | GUC_NOT_IN_SAMPLE
+	  },
+	  &codegen_jit,
+	  false, NULL, NULL
 	},
 
 	/* End-of-list marker */

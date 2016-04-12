@@ -53,288 +53,253 @@ SlotDeformTupleCodeGen::SlotDeformTupleCodeGen(TupleTableSlot* slot,
 
 }
 
-static void ElogWrapper(const char* func_name) {
-	elog(INFO, "Calling wrapped function: %s", func_name);
+static void ElogWrapper(const char* message) {
+	elog(INFO, "%s\n", message);
 }
 
 llvm::Function* SlotDeformTupleCodeGen::GenerateSimpleSlotDeformTuple(
-		gpcodegen::CodeGenUtils* codegen_utils) {
-	llvm::Function* llvm_elog_wrapper = codegen_utils->RegisterExternalFunction(
-			ElogWrapper);
-	assert(llvm_elog_wrapper != nullptr);
+    gpcodegen::CodeGenUtils* codegen_utils) {
+  llvm::Function* llvm_elog_wrapper = codegen_utils->RegisterExternalFunction(
+      ElogWrapper);
+  assert(llvm_elog_wrapper != nullptr);
 
-	auto regular_func_pointer = GetRegularFuncPointer();
-	llvm::Function* llvm_regular_function =
-			codegen_utils->RegisterExternalFunction(regular_func_pointer);
-	assert(llvm_regular_function != nullptr);
+  auto regular_func_pointer = GetRegularFuncPointer();
+  llvm::Function* llvm_regular_function =
+      codegen_utils->RegisterExternalFunction(regular_func_pointer);
+  assert(llvm_regular_function != nullptr);
 
-	llvm::Function* llvm_function = codegen_utils->CreateFunctionTypeDef<
-			decltype(regular_func_pointer)>(GenerateUniqueName(GetUniqueFuncName()));
+  llvm::Function* llvm_function = codegen_utils->CreateFunctionTypeDef<
+      decltype(regular_func_pointer)>(GenerateUniqueName(GetUniqueFuncName()));
 
-	llvm::BasicBlock* function_body = codegen_utils->CreateBasicBlock("fn_body",
-			llvm_function);
+  llvm::BasicBlock* function_body = codegen_utils->CreateBasicBlock(
+      "fn_body", llvm_function);
 
-	codegen_utils->ir_builder()->SetInsertPoint(function_body);
-	llvm::Value* func_name_llvm = codegen_utils->GetConstant(
-			GetOrigFuncName().c_str());
-	codegen_utils->ir_builder()->CreateCall(llvm_elog_wrapper,
+  codegen_utils->ir_builder()->SetInsertPoint(function_body);
+
+  llvm::Value* func_name_llvm = codegen_utils->GetConstant(
+      GetOrigFuncName().c_str());
+  codegen_utils->ir_builder()->CreateCall(llvm_elog_wrapper,
 			{ func_name_llvm });
 
-	std::vector<llvm::Value*> forwarded_args;
+  std::vector<llvm::Value*> forwarded_args;
 
-	for (llvm::Argument& arg : llvm_function->args()) {
-		forwarded_args.push_back(&arg);
-	}
+  for (llvm::Argument& arg : llvm_function->args()) {
+    forwarded_args.push_back(&arg);
+  }
 
-	llvm::CallInst* call = codegen_utils->ir_builder()->CreateCall(
-			llvm_regular_function, forwarded_args);
+  llvm::CallInst* call = codegen_utils->ir_builder()->CreateCall(
+      llvm_regular_function, forwarded_args);
 
-	// Return the result of the call, or void if the function returns void.
-	if (std::is_same<
-			gpcodegen::codegen_utils_detail::FunctionTypeUnpacker<
-			decltype(regular_func_pointer)>::R, void>::value) {
-		codegen_utils->ir_builder()->CreateRetVoid();
-	} else {
-		codegen_utils->ir_builder()->CreateRet(call);
-	}
+  // Return the result of the call, or void if the function returns void.
+  if (std::is_same<
+      gpcodegen::codegen_utils_detail::FunctionTypeUnpacker<
+      decltype(regular_func_pointer)>::R, void>::value) {
+    codegen_utils->ir_builder()->CreateRetVoid();
+  } else {
+    codegen_utils->ir_builder()->CreateRet(call);
+  }
 
-	return llvm_function;
+  return llvm_function;
 }
 
 
 extern void slot_deform_tuple(TupleTableSlot *slot, int natts);
 
-bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(gpcodegen::CodeGenUtils* codegen_utils) {
-	TupleDesc tupleDesc = slot_->tts_tupleDescriptor;
-	int natts = tupleDesc->natts;
+bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
+    gpcodegen::CodeGenUtils* codegen_utils) {
 
-	auto irb = codegen_utils->ir_builder();
+  //elog(INFO, "Entering GenerateSlotDeformTuple\n");
 
+  TupleDesc tupleDesc = slot_->tts_tupleDescriptor;
+  int natts = tupleDesc->natts;
 
-//	bool		hasnulls = HeapTupleHasNulls(tuple);
-//
-//	if (hasnulls)
-//	{
-//		return false;
-//	}
+  auto irb = codegen_utils->ir_builder();
 
-	COMPILE_ASSERT(sizeof(Datum) == sizeof(int64));
+/*  llvm::Function* llvm_elog_wrapper = codegen_utils->RegisterExternalFunction(
+      ElogWrapper);
+  assert(nullptr != llvm_elog_wrapper);
+*/
+  COMPILE_ASSERT(sizeof(Datum) == sizeof(int64));
 
-	if (tupleDesc->natts != 1 || tupleDesc->attrs[0]->attlen != sizeof(int32))
-	{
-		return false;
-	}
+  /* void slot_deform_tuple_func(char* data_start_adress,
+   *                             void* values, void* isnull)
+   */
+  llvm::Function* slot_deform_tuple_func = codegen_utils->CreateFunction<void,
+      TupleTableSlot*, int>("slot_deform_tuple_gen");
 
+  /* BasicBlock of function entry. */
+  llvm::BasicBlock* entry_block = codegen_utils->CreateBasicBlock(
+      "entry", slot_deform_tuple_func);
+  /* BasicBlock of falling back to regular slot_deform_tuple */
+  llvm::BasicBlock* fallback_case = codegen_utils->CreateBasicBlock(
+      "fallback_case", slot_deform_tuple_func);
+  /* BasicBlock of slot_deform_tuple code generation */
+  llvm::BasicBlock* gen_code_case = codegen_utils->CreateBasicBlock(
+      "gen_code_case", slot_deform_tuple_func);
 
-//	  template <typename MemberType,
-//	            typename StructType,
-//	            typename... PointerToMemberTypes>
-//	  void CheckGetPointerToMemberConstant(
-//	      std::vector<std::uintptr_t>* pointer_check_addresses,
-//	      const StructType* external_struct,
-//	      const std::size_t expected_offset,
-//	      PointerToMemberTypes&&... pointers_to_members) {
-//	    llvm::Constant* llvm_ptr_to_struct
-//	        = codegen_utils_->GetConstant(external_struct);
-//
-//	    // Generate a function that returns the (constant) address of the member
-//	    // field inside the struct.
-//	    llvm::Function* global_member_accessor_fn
-//	        = codegen_utils_->CreateFunction<std::uintptr_t>(
-//	            GlobalConstantAccessorName(pointer_check_addresses->size()));
-//	    llvm::BasicBlock* global_member_accessor_fn_body
-//	        = codegen_utils_->CreateBasicBlock("body", global_member_accessor_fn);
-//	    codegen_utils_->ir_builder()->SetInsertPoint(
-//	        global_member_accessor_fn_body);
-//	    llvm::Value* member_ptr = codegen_utils_->GetPointerToMember(
-//	        llvm_ptr_to_struct,
-//	        std::forward<PointerToMemberTypes>(pointers_to_members)...);
-//	    llvm::Value* member_address = codegen_utils_->ir_builder()->CreatePtrToInt(
-//	        member_ptr,
-//	        codegen_utils_->GetType<std::uintptr_t>());
-//	    codegen_utils_->ir_builder()->CreateRet(member_address);
-//
-//	    // Verify accessor function is well-formed.
-//	    EXPECT_FALSE(llvm::verifyFunction(*global_member_accessor_fn));
-//
-//	    pointer_check_addresses->emplace_back(
-//	        reinterpret_cast<std::uintptr_t>(external_struct) + expected_offset);
-//	  }
+  irb->SetInsertPoint(entry_block);
 
-	// void slot_deform_tuple_func(char* data_start_adress, void* values, void* isnull)
-    llvm::Function* slot_deform_tuple_func
-  	  = codegen_utils->CreateFunction<void, TupleTableSlot*, int>(
-  			  "slot_deform_tuple_gen");
+  llvm::Value* llvm_slot = codegen_utils->GetConstant(slot_);
+  /* Extract heap tuple from slot */
+  llvm::Value* llvm_heap_tup =
+      irb->CreateLoad(codegen_utils->GetPointerToMember(
+          llvm_slot, &TupleTableSlot::PRIVATE_tts_heaptuple));
 
-    // BasicBlocks for function entry.
-    llvm::BasicBlock* entry_block = codegen_utils->CreateBasicBlock(
-  	  "entry", slot_deform_tuple_func);
+	/* Extract t_data field from heap tuple and store it into tup. */
+  llvm::Value* llvm_t_data = irb->CreateLoad(
+      codegen_utils->GetPointerToMember(llvm_heap_tup,
+                                        &HeapTupleData::t_data));
+  /* Extract t_hoff field from the tup */
+  llvm::Value* llvm_t_hoff = irb->CreateLoad(
+      codegen_utils->GetPointerToMember(llvm_t_data,
+                                        &HeapTupleHeaderData::t_hoff));
 
-//    llvm::Value* input = gpcodegen::ArgumentByPosition(slot_deform_tuple_func, 0);
-//    llvm::Value* out_values = gpcodegen::ArgumentByPosition(slot_deform_tuple_func, 1);
+  /* Find the start of input data byte array */
+  llvm::Value* llvm_input_start = irb->CreateInBoundsGEP(
+      llvm_t_data, {llvm_t_hoff});
+  llvm::Value* llvm_t_infomask = codegen_utils->
+      GetPointerToMember(llvm_t_data, &HeapTupleHeaderData::t_infomask);
 
-	irb->SetInsertPoint(entry_block);
+  /* Find the start of the output datum array */
+  llvm::Value* llvm_out_values = irb->CreateLoad(
+      codegen_utils->GetPointerToMember(llvm_slot,
+                                        &TupleTableSlot::PRIVATE_tts_values));
+  llvm::Value* llvm_out_is_null =
+      irb->CreateBitCast(irb->CreateLoad(codegen_utils->GetPointerToMember(
+          llvm_slot, &TupleTableSlot::PRIVATE_tts_isnull)),
+                         codegen_utils->GetType<void*>());
 
+  llvm::Value* input = llvm_input_start;
+  llvm::Value* out_values = llvm_out_values;
 
-	// Find the start of input data byte array
-	llvm::Value* llvm_slot = codegen_utils->GetConstant(slot_);
-	llvm::Value* llvm_heap_tup = irb->CreateLoad(codegen_utils->GetPointerToMember(llvm_slot, &TupleTableSlot::PRIVATE_tts_heaptuple));
-	// This is our tup
-	llvm::Value* llvm_t_data = irb->CreateLoad(codegen_utils->GetPointerToMember(llvm_heap_tup, &HeapTupleData::t_data));
-	llvm::Value* llvm_t_hoff = irb->CreateLoad(codegen_utils->GetPointerToMember(llvm_t_data, &HeapTupleHeaderData::t_hoff));
-	llvm::Value* llvm_input_start = irb->CreateInBoundsGEP(llvm_t_data, {llvm_t_hoff});
+  /*
+   * Examine if we tuple has nulls and fall back
+   * to regular slot_deform_tuple accordingly.
+   */
+  llvm::Value* llvm_loaded_t_infomask = irb->CreateLoad(llvm_t_infomask);
+  uint16 null_mask = HEAP_HASNULL;
+  llvm::Value* llvm_heap_tuple_has_null = irb->CreateAnd(
+      llvm_loaded_t_infomask, codegen_utils->GetConstant(null_mask));
 
-	llvm::Value* llvm_t_infomask = codegen_utils->GetPointerToMember(llvm_t_data, &HeapTupleHeaderData::t_infomask);
+  /* Implement fallback */
+  irb->SetInsertPoint(fallback_case);
 
-	// Find the start of the output datum array
-	llvm::Value* llvm_out_values = irb->CreateLoad(codegen_utils->GetPointerToMember(llvm_slot, &TupleTableSlot::PRIVATE_tts_values));
-	llvm::Value* llvm_out_is_null = irb->CreateLoad(codegen_utils->GetPointerToMember(llvm_slot, &TupleTableSlot::PRIVATE_tts_isnull));
+  uint16 uint16_zero = 0;
+  /* llvm_heap_tuple_has_null != 0 means we have nulls */
+  llvm::Value* llvm_has_null = irb->CreateICmpNE(
+      llvm_heap_tuple_has_null, codegen_utils->GetConstant(uint16_zero));
 
-	llvm::Value* input = llvm_input_start;
-	llvm::Value* out_values = llvm_out_values;
+  /* Fallback if tuple has nulls*/
+  irb->CreateCondBr(llvm_has_null, fallback_case, gen_code_case);
 
+/*  const char* fallback_log_msg = "Falling back to regular slot_deform_tuple.";
+  llvm::Value* llvm_fallback_log_msg = codegen_utils->GetConstant(
+      fallback_log_msg);
+  codegen_utils->ir_builder()->CreateCall(llvm_elog_wrapper,
+        { llvm_fallback_log_msg });
+*/
 
+  llvm::Function* llvm_fallback_func =
+      GenerateSimpleSlotDeformTuple(codegen_utils);
+  std::vector<llvm::Value*> forwarded_args;
 
+  for (llvm::Argument& arg : slot_deform_tuple_func->args()) {
+    forwarded_args.push_back(&arg);
+  }
 
-	llvm::Value* llvm_loaded_t_infomask = irb->CreateLoad(llvm_t_infomask);
-	uint16 null_mask = HEAP_HASNULL;
-	llvm::Value* llvm_heap_tuple_has_null = irb->CreateAnd(llvm_loaded_t_infomask, codegen_utils->GetConstant(null_mask));
+  llvm::CallInst* call_fallback_func = irb->CreateCall(
+      llvm_fallback_func, forwarded_args);
 
+  /* Return the result of the call, or void if the function returns void. */
+  irb->CreateRet(call_fallback_func);
 
-	// llvm_heap_tuple_has_null != 0 means we have nulls
-	uint16 uint16_zero = 0;
-	  llvm::Value* llvm_has_null = irb->CreateICmpNE(
-			  llvm_heap_tuple_has_null,
-		  codegen_utils->GetConstant(uint16_zero));
+  /* Generate code of slot_deform_tuple */
+  irb->SetInsertPoint(gen_code_case);
 
+  llvm::Value* true_const = codegen_utils->GetConstant(true);
+  llvm::Value* datum_size_const = codegen_utils->GetConstant(sizeof(Datum));
+  llvm::Value* bool_size_const = codegen_utils->GetConstant(sizeof(bool));
 
-	  llvm::BasicBlock* fallback_case = codegen_utils->CreateBasicBlock(
-	      "fallback_case",
-		  slot_deform_tuple_func);
-	  llvm::BasicBlock* gen_code_case = codegen_utils->CreateBasicBlock(
-	      "gen_code_case",
-		  slot_deform_tuple_func);
+  int off = 0;
 
-	  irb->CreateCondBr(llvm_has_null,
-			  fallback_case,
-			  gen_code_case);
+  Form_pg_attribute *att = tupleDesc->attrs;
+  for (int attnum = 0; attnum < natts; attnum++)
+  {
+    Form_pg_attribute thisatt = att[attnum];
+    off = att_align(off, thisatt->attalign);
 
-	  irb->SetInsertPoint(fallback_case);
+    if (thisatt->attlen < 0)
+    {
+      // elog(INFO, "Exiting GenerateSlotDeformTuple unsuccessfully: variable attribute length = %d\n", thisatt->attlen);
+      /* Manager will clean up incomplete generated code. */
+      return false;
+    }
 
+    // The next address of the input array where we need to read.
+    llvm::Value* next_address_load =
+        irb->CreateInBoundsGEP(input,
+                               {codegen_utils->GetConstant(off)});
 
-	  //======================
-	  llvm::Function* llvm_fallback_func = GenerateSimpleSlotDeformTuple(codegen_utils);
+    llvm::Value* next_address_store =
+        irb->CreateInBoundsGEP(out_values,
+                               {codegen_utils->GetConstant(attnum)});
 
-		std::vector<llvm::Value*> forwarded_args;
+    llvm::Value* colVal = nullptr;
 
-		for (llvm::Argument& arg : slot_deform_tuple_func->args()) {
-			forwarded_args.push_back(&arg);
-		}
+    // Load the value from the calculated input address.
+    switch(thisatt->attlen)
+    {
+      case sizeof(char):
+        // Read 1 byte at next_address_load
+        colVal = irb->CreateLoad(next_address_load);
+        // store colVal into out_values[attnum]
+			  break;
+      case sizeof(int16):
+			  colVal = irb->CreateLoad(
+			      codegen_utils->GetType<int16>(),irb->CreateBitCast(
+			          next_address_load, codegen_utils->GetType<int16*>()));
+        break;
+      case sizeof(int32):
+        colVal = irb->CreateLoad(
+            codegen_utils->GetType<int32>(),
+            irb->CreateBitCast(next_address_load,
+                               codegen_utils->GetType<int32*>()));
+        break;
+      case sizeof(int64):
+        colVal = irb->CreateLoad(
+            codegen_utils->GetType<int64>(), irb->CreateBitCast(
+                next_address_load, codegen_utils->GetType<int64*>()));
+        break;
+      default:
+        // elog(INFO, "Exiting GenerateSlotDeformTuple unsuccessfully: unsupported type, attribute length = %d\n", thisatt->attlen);
+        /* Manager will clean up the incomplete generated code. */
+        return false;
+    }
 
-		llvm::CallInst* call = irb->CreateCall(
-				llvm_fallback_func, forwarded_args);
+    llvm::Value* int64ColVal = irb->CreateZExt(colVal, codegen_utils->GetType<int64>());
+    irb->CreateStore(int64ColVal, next_address_store);
 
-		// Return the result of the call, or void if the function returns void.
-		irb->CreateRet(call);
+    llvm::LoadInst* load_instruction =
+        irb->CreateLoad(next_address_load, "input");
 
-	  // =====================
+    off += thisatt->attlen;
+  }
 
-	  irb->SetInsertPoint(gen_code_case);
+  llvm::Function* llvm_memset = codegen_utils->RegisterExternalFunction(memset);
+  assert(nullptr != llvm_memset);
 
+  llvm::Value* llvm_fill_size = codegen_utils->GetConstant(
+      natts * sizeof(*slot_->PRIVATE_tts_isnull));
+  llvm::Value* llvm_fill_val = codegen_utils->GetConstant(0);
 
-	// Question: Do we use code generator's slot pointer or do we use runtime parameter's slot pointer?
-	// Ans: Use code gen's to make it a constant
-	// Steps:
-	// Extract heap tuple from slot
-	// Extract t_data field from heap tuple and store it into tup (start of the data that begins with a header and followed by bytes)
-	// Extract t_hoff field from the tup
-	// Calculate start of data bytes tup + tup->h_off => This is our input
+  llvm::CallInst* call_llvm_memset = codegen_utils->ir_builder()->CreateCall(
+      llvm_memset, {llvm_out_is_null, llvm_fill_val, llvm_fill_size});
 
-	// Now we need a handle to the output array
-	// slot->PRIVATE_tts_values is our output. But who allocates it? ExecSetSlotDescriptor already allocated it, before passing it to the enroller
+  irb->CreateRetVoid();
 
+  elog(INFO, "Exiting GenerateSlotDeformTuple successfully\n");
 
-
-    llvm::Value* true_const = codegen_utils->GetConstant(true);
-    llvm::Value* datum_size_const = codegen_utils->GetConstant(sizeof(Datum));
-    llvm::Value* bool_size_const = codegen_utils->GetConstant(sizeof(bool));
-
-	int off = 0;
-
-	Form_pg_attribute *att = tupleDesc->attrs;
-	for (int attnum = 0; attnum < natts; attnum++)
-	{
-		Form_pg_attribute thisatt = att[attnum];
-		off = att_align(off, thisatt->attalign);
-
-		if (thisatt->attlen < 0)
-		{
-			// TODO: Cleanup code generator
-			return false;
-		}
-
-		// Load tp + off
-		// store value
-		// store isnull = true
-		// add value + sizeof(Datum)
-		// add isnull + sizeof(bool)
-
-		// The next address of the input array where we need to read.
-		llvm::Value* next_address_load =
-			irb->CreateInBoundsGEP(input,
-				{codegen_utils->GetConstant(off)});
-
-		llvm::Value* next_address_store =
-			irb->CreateInBoundsGEP(out_values,
-				{codegen_utils->GetConstant(attnum)});
-
-		llvm::Value* colVal = nullptr;
-
-		// Load the value from the calculated input address.
-		switch(thisatt->attlen)
-		{
-		case sizeof(char):
-			// Read 1 byte at next_address_load
-			colVal = irb->CreateLoad(next_address_load);
-			// store colVal into out_values[attnum]
-			break;
-		case sizeof(int16):
-			colVal = irb->CreateLoad(codegen_utils->GetType<int16>(),
-					irb->CreateBitCast(next_address_load, codegen_utils->GetType<int16*>()));
-			break;
-		case sizeof(int32):
-			colVal = irb->CreateLoad(codegen_utils->GetType<int32>(),
-					irb->CreateBitCast(next_address_load, codegen_utils->GetType<int32*>()));
-			break;
-		case sizeof(int64):
-			colVal = irb->CreateLoad(codegen_utils->GetType<int64>(),
-					irb->CreateBitCast(next_address_load, codegen_utils->GetType<int64*>()));
-			break;
-		default:
-			//TODO Cleanup
-			return false;
-		}
-
-		llvm::Value* int64ColVal = irb->CreateZExt(colVal, codegen_utils->GetType<int64>());
-		irb->CreateStore(int64ColVal, next_address_store);
-
-		llvm::LoadInst* load_instruction =
-			irb->CreateLoad(next_address_load, "input");
-
-		off += thisatt->attlen;
-	}
-
-	irb->CreateMemSet(llvm_out_is_null, codegen_utils->GetConstant(0), natts * sizeof(*slot_->PRIVATE_tts_isnull), 1);
-    irb->CreateRetVoid();
-
-//	/*
-//	 * Save state for next execution
-//	 */
-//	slot->PRIVATE_tts_nvalid = attnum;
-//	slot->PRIVATE_tts_off = off;
-//	slot->PRIVATE_tts_slow = slow;
-
-    return true;
+  return true;
 }
 
 

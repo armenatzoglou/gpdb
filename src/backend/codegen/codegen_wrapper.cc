@@ -16,7 +16,7 @@
 
 #include "codegen/utils/codegen_utils.h"
 
-extern int memory_profiler_dataset_size;
+extern bool codegen_jit;
 
 using namespace gpcodegen;
 
@@ -72,7 +72,7 @@ void* SlotDeformTupleCodeGen_Enroll(TupleTableSlot* slot, SlotDeformTupleFn regu
 	CodeGenManager* manager = static_cast<CodeGenManager*>(
 			GetActiveCodeGeneratorManager());
 
-	if (nullptr == manager || memory_profiler_dataset_size != 10)
+	if (nullptr == manager || !codegen_jit)
 	{
 		BaseCodeGen<SlotDeformTupleFn>::SetToRegular(regular_func_ptr, ptr_to_chosen_func_ptr);
 		return nullptr;
