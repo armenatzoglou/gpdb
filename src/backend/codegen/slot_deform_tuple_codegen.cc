@@ -246,34 +246,44 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
 
     llvm::Value* colVal = nullptr;
 
-    // Load the value from the calculated input address.
-    switch(thisatt->attlen)
+    if( thisatt->attbyval)
     {
-      case sizeof(char):
-        // Read 1 byte at next_address_load
-        colVal = irb->CreateLoad(next_address_load);
-        // store colVal into out_values[attnum]
-			  break;
-      case sizeof(int16):
-			  colVal = irb->CreateLoad(
-			      codegen_utils->GetType<int16>(),irb->CreateBitCast(
-			          next_address_load, codegen_utils->GetType<int16*>()));
-        break;
-      case sizeof(int32):
-        colVal = irb->CreateLoad(
-            codegen_utils->GetType<int32>(),
-            irb->CreateBitCast(next_address_load,
-                               codegen_utils->GetType<int32*>()));
-        break;
-      case sizeof(int64):
-        colVal = irb->CreateLoad(
-            codegen_utils->GetType<int64>(), irb->CreateBitCast(
-                next_address_load, codegen_utils->GetType<int64*>()));
-        break;
-      default:
-        // elog(INFO, "Exiting GenerateSlotDeformTuple unsuccessfully: unsupported type, attribute length = %d\n", thisatt->attlen);
-        /* Manager will clean up the incomplete generated code. */
-        return false;
+      // Load the value from the calculated input address.
+      switch(thisatt->attlen)
+      {
+        case sizeof(char):
+          // Read 1 byte at next_address_load
+          colVal = irb->CreateLoad(next_address_load);
+          // store colVal into out_values[attnum]
+          break;
+        case sizeof(int16):
+          colVal = irb->CreateLoad(
+              codegen_utils->GetType<int16>(),irb->CreateBitCast(
+                  next_address_load, codegen_utils->GetType<int16*>()));
+          break;
+        case sizeof(int32):
+          colVal = irb->CreateLoad(
+              codegen_utils->GetType<int32>(),
+              irb->CreateBitCast(next_address_load,
+                                 codegen_utils->GetType<int32*>()));
+          break;
+        case sizeof(int64):  /* Size of Datum */
+          colVal = irb->CreateLoad(
+              codegen_utils->GetType<int64>(), irb->CreateBitCast(
+                  next_address_load, codegen_utils->GetType<int64*>()));
+          break;
+        default:
+          // elog(INFO, "Exiting GenerateSlotDeformTuple unsuccessfully: unsupported type, attribute length = %d\n", thisatt->attlen);
+          /* Manager will clean up the incomplete generated code. */
+          return false;
+      }
+    }
+    else
+    {
+      /* Treat it as a pointer (PointerGetDatum). */
+      colVal = irb->CreateLoad(
+          codegen_utils->GetType<int64>(), irb->CreateBitCast(
+              next_address_load, codegen_utils->GetType<int64*>()));
     }
 
     llvm::Value* int64ColVal = irb->CreateZExt(colVal, codegen_utils->GetType<int64>());
@@ -297,7 +307,7 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
 
   irb->CreateRetVoid();
 
-  elog(INFO, "Exiting GenerateSlotDeformTuple successfully\n");
+  //elog(INFO, "Exiting GenerateSlotDeformTuple successfully\n");
 
   return true;
 }
