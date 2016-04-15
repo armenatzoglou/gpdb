@@ -108,7 +108,7 @@ extern void slot_deform_tuple(TupleTableSlot *slot, int natts);
 bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
     gpcodegen::CodeGenUtils* codegen_utils) {
 
-  //elog(INFO, "Entering GenerateSlotDeformTuple\n");
+  elog(INFO, "Entering GenerateSlotDeformTuple\n");
 
   TupleDesc tupleDesc = slot_->tts_tupleDescriptor;
   int natts = tupleDesc->natts;
@@ -181,9 +181,6 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
   llvm::Value* llvm_heap_tuple_has_null = irb->CreateAnd(
       llvm_loaded_t_infomask, codegen_utils->GetConstant(null_mask));
 
-  /* Implement fallback */
-  irb->SetInsertPoint(fallback_case);
-
   uint16 uint16_zero = 0;
   /* llvm_heap_tuple_has_null != 0 means we have nulls */
   llvm::Value* llvm_has_null = irb->CreateICmpNE(
@@ -192,6 +189,10 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
   /* Fallback if tuple has nulls*/
   irb->CreateCondBr(llvm_has_null, fallback_case, gen_code_case);
 
+  /* Implement fallback */
+  irb->SetInsertPoint(fallback_case);
+
+  elog(INFO, "Entering GenerateSlotDeformTuple\n");
 /*  const char* fallback_log_msg = "Falling back to regular slot_deform_tuple.";
   llvm::Value* llvm_fallback_log_msg = codegen_utils->GetConstant(
       fallback_log_msg);
@@ -230,7 +231,7 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
 
     if (thisatt->attlen < 0)
     {
-      // elog(INFO, "Exiting GenerateSlotDeformTuple unsuccessfully: variable attribute length = %d\n", thisatt->attlen);
+       elog(INFO, "Exiting GenerateSlotDeformTuple unsuccessfully: variable attribute: name = %s, attrnum = %d, length = %d\n", thisatt->attname, attnum, thisatt->attlen);
       /* Manager will clean up incomplete generated code. */
       return false;
     }
@@ -273,7 +274,7 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
                   next_address_load, codegen_utils->GetType<int64*>()));
           break;
         default:
-          // elog(INFO, "Exiting GenerateSlotDeformTuple unsuccessfully: unsupported type, attribute length = %d\n", thisatt->attlen);
+           elog(INFO, "Exiting GenerateSlotDeformTuple unsuccessfully: unsupported type, attribute length = %d\n", thisatt->attlen);
           /* Manager will clean up the incomplete generated code. */
           return false;
       }
@@ -307,7 +308,7 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
 
   irb->CreateRetVoid();
 
-  //elog(INFO, "Exiting GenerateSlotDeformTuple successfully\n");
+  elog(INFO, "Exiting GenerateSlotDeformTuple successfully\n");
 
   return true;
 }
