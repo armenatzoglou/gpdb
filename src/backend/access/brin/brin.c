@@ -23,7 +23,6 @@
 #include "access/reloptions.h"
 #include "access/relscan.h"
 #include "access/xact.h"
-#include "access/xloginsert.h"
 #include "catalog/index.h"
 #include "miscadmin.h"
 #include "pgstat.h"
@@ -31,7 +30,6 @@
 #include "storage/freespace.h"
 #include "utils/memutils.h"
 #include "utils/rel.h"
-#include "utils/snapmgr.h"
 
 
 /*

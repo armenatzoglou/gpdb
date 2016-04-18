@@ -580,6 +580,7 @@ heapgettup(HeapScanDesc scan,
 			return;
 		}
 
+		bool finished = false;
 	
 		if (backward)
         	{
@@ -852,6 +853,8 @@ heapgettup_pagemode(HeapScanDesc scan,
 			return;
 		}
 			
+    bool finished = false;
+
 		if (backward)
 		{
 			finished = (page == scan->rs_startblock) ||
