@@ -136,7 +136,6 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
   /* Implement fallback */
   irb->SetInsertPoint(fallback_case);
 
-  elog(INFO, "Falling back to regular slot_deform_tuple, because slot has null.");
   llvm::Function* llvm_elog_wrapper = codegen_utils->RegisterExternalFunction(
         ElogWrapper);
   assert(llvm_elog_wrapper != nullptr);
@@ -291,6 +290,8 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
 
   irb->CreateRetVoid();
 
+
+  elog(INFO, "Exiting GenerateSlotDeformTuple successfully, attnum = %d", attnum);
   elog(INFO, "Exiting GenerateSlotDeformTuple successfully\n");
 
   return true;
