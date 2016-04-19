@@ -180,27 +180,8 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
 
   int off = 0;
 
-  /*
-   * Check whether the first call for this tuple, and initialize or restore
-   * loop state.
-   */
-  int attnum = slot_->PRIVATE_tts_nvalid;
-  if (attnum == 0)
-  {
-	  /* Start from the first attribute */
-	  off = 0;
-  }
-  else
-  {
-	  /* Restore state from previous execution */
-	  off = slot_->PRIVATE_tts_off;
-  }
-
-  elog(INFO, "Calling slot_deform_tuple, attnum = %d", attnum);
-  elog(DEBUG1, "Calling slot_deform_tuple, attnum = %d", attnum);
-
   Form_pg_attribute *att = tupleDesc->attrs;
-  for (; attnum < natts; attnum++)
+  for (int attnum = 0; attnum < natts; attnum++)
   {
     Form_pg_attribute thisatt = att[attnum];
     off = att_align(off, thisatt->attalign);
@@ -281,12 +262,6 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
 
   llvm::CallInst* call_llvm_memset = codegen_utils->ir_builder()->CreateCall(
       llvm_memset, {llvm_out_is_null, llvm_fill_val, llvm_fill_size});
-
-  /*
-   * Save state for next execution
-   */
-  slot_->PRIVATE_tts_nvalid = attnum;
-  slot_->PRIVATE_tts_off = off;
 
   irb->CreateRetVoid();
 
