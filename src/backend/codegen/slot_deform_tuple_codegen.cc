@@ -57,52 +57,6 @@ static void ElogWrapper(const char* message) {
 	elog(INFO, "%s\n", message);
 }
 
-llvm::Function* SlotDeformTupleCodeGen::GenerateSimpleSlotDeformTuple(
-    gpcodegen::CodeGenUtils* codegen_utils) {
-  llvm::Function* llvm_elog_wrapper = codegen_utils->RegisterExternalFunction(
-      ElogWrapper);
-  assert(llvm_elog_wrapper != nullptr);
-
-  auto regular_func_pointer = GetRegularFuncPointer();
-  llvm::Function* llvm_regular_function =
-      codegen_utils->RegisterExternalFunction(regular_func_pointer);
-  assert(llvm_regular_function != nullptr);
-
-  llvm::Function* llvm_function = codegen_utils->CreateFunctionTypeDef<
-      decltype(regular_func_pointer)>(GenerateUniqueName(GetUniqueFuncName()));
-
-  llvm::BasicBlock* function_body = codegen_utils->CreateBasicBlock(
-      "fn_body", llvm_function);
-
-  codegen_utils->ir_builder()->SetInsertPoint(function_body);
-
-  llvm::Value* func_name_llvm = codegen_utils->GetConstant(
-      GetOrigFuncName().c_str());
-  codegen_utils->ir_builder()->CreateCall(llvm_elog_wrapper,
-			{ func_name_llvm });
-
-  std::vector<llvm::Value*> forwarded_args;
-
-  for (llvm::Argument& arg : llvm_function->args()) {
-    forwarded_args.push_back(&arg);
-  }
-
-  llvm::CallInst* call = codegen_utils->ir_builder()->CreateCall(
-      llvm_regular_function, forwarded_args);
-
-  // Return the result of the call, or void if the function returns void.
-  if (std::is_same<
-      gpcodegen::codegen_utils_detail::FunctionTypeUnpacker<
-      decltype(regular_func_pointer)>::R, void>::value) {
-    codegen_utils->ir_builder()->CreateRetVoid();
-  } else {
-    codegen_utils->ir_builder()->CreateRet(call);
-  }
-
-  return llvm_function;
-}
-
-
 extern void slot_deform_tuple(TupleTableSlot *slot, int natts);
 
 bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
@@ -115,15 +69,8 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
 
   auto irb = codegen_utils->ir_builder();
 
-/*  llvm::Function* llvm_elog_wrapper = codegen_utils->RegisterExternalFunction(
-      ElogWrapper);
-  assert(nullptr != llvm_elog_wrapper);
-*/
   COMPILE_ASSERT(sizeof(Datum) == sizeof(int64));
 
-  /* void slot_deform_tuple_func(char* data_start_adress,
-   *                             void* values, void* isnull)
-   */
   llvm::Function* slot_deform_tuple_func = codegen_utils->CreateFunction<void,
       TupleTableSlot*, int>("slot_deform_tuple_gen");
 
@@ -169,9 +116,6 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
           llvm_slot, &TupleTableSlot::PRIVATE_tts_isnull)),
                          codegen_utils->GetType<void*>());
 
-  llvm::Value* input = llvm_input_start;
-  llvm::Value* out_values = llvm_out_values;
-
   /*
    * Examine if we tuple has nulls and fall back
    * to regular slot_deform_tuple accordingly.
@@ -192,27 +136,40 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
   /* Implement fallback */
   irb->SetInsertPoint(fallback_case);
 
-  elog(INFO, "Entering GenerateSlotDeformTuple\n");
-/*  const char* fallback_log_msg = "Falling back to regular slot_deform_tuple.";
+  llvm::Function* llvm_elog_wrapper = codegen_utils->RegisterExternalFunction(
+        ElogWrapper);
+  assert(llvm_elog_wrapper != nullptr);
+
+  const char* fallback_log_msg = "Falling back to regular slot_deform_tuple.";
   llvm::Value* llvm_fallback_log_msg = codegen_utils->GetConstant(
       fallback_log_msg);
   codegen_utils->ir_builder()->CreateCall(llvm_elog_wrapper,
         { llvm_fallback_log_msg });
-*/
 
-  llvm::Function* llvm_fallback_func =
-      GenerateSimpleSlotDeformTuple(codegen_utils);
+  auto regular_func_pointer = GetRegularFuncPointer();
+  llvm::Function* llvm_regular_function =
+		  codegen_utils->RegisterExternalFunction(regular_func_pointer);
+  assert(llvm_regular_function != nullptr);
+
   std::vector<llvm::Value*> forwarded_args;
 
   for (llvm::Argument& arg : slot_deform_tuple_func->args()) {
-    forwarded_args.push_back(&arg);
+	  forwarded_args.push_back(&arg);
   }
 
-  llvm::CallInst* call_fallback_func = irb->CreateCall(
-      llvm_fallback_func, forwarded_args);
+  llvm::CallInst* call_fallback_func = codegen_utils->ir_builder()->CreateCall(
+        llvm_regular_function, forwarded_args);
 
   /* Return the result of the call, or void if the function returns void. */
-  irb->CreateRet(call_fallback_func);
+  if (std::is_same<
+		  gpcodegen::codegen_utils_detail::FunctionTypeUnpacker<
+		  decltype(regular_func_pointer)>::R, void>::value) {
+	  codegen_utils->ir_builder()->CreateRetVoid();
+  }
+  else
+  {
+	  codegen_utils->ir_builder()->CreateRet(call_fallback_func);
+  }
 
   /* Generate code of slot_deform_tuple */
   irb->SetInsertPoint(gen_code_case);
@@ -238,11 +195,11 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
 
     // The next address of the input array where we need to read.
     llvm::Value* next_address_load =
-        irb->CreateInBoundsGEP(input,
+        irb->CreateInBoundsGEP(llvm_input_start,
                                {codegen_utils->GetConstant(off)});
 
     llvm::Value* next_address_store =
-        irb->CreateInBoundsGEP(out_values,
+        irb->CreateInBoundsGEP(llvm_out_values,
                                {codegen_utils->GetConstant(attnum)});
 
     llvm::Value* colVal = nullptr;
@@ -315,9 +272,8 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
 
 
 bool SlotDeformTupleCodeGen::DoCodeGeneration(CodeGenUtils* codegen_utils) {
-	//elog(WARNING, "GenerateCode: %p, %s", codegen_utils, GetUniqueFuncName().c_str());
+	//elog(INFO, "GenerateCode: %p, %s", codegen_utils, GetUniqueFuncName().c_str());
 
-	//GenerateSimpleSlotDeformTuple(codegen_utils);
 	GenerateSlotDeformTuple(codegen_utils);
 
 	return true;

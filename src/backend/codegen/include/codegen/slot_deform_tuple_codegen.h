@@ -51,13 +51,11 @@ private:
 	static constexpr char kSlotDeformTupleNamePrefix[] = "slot_deform_tuple";
 
 	/**
-	 * @brief Generates runtime code that calls slot_deform_tuple as an external function.
+	 * @brief Generates runtime code for slot_deform_tuple.
 	 *
 	 * @param codegen_utils Utility to ease the code generation process.
 	 * @return true on successful generation.
 	 **/
-	llvm::Function* GenerateSimpleSlotDeformTuple(gpcodegen::CodeGenUtils* codegen_utils);
-
 	bool GenerateSlotDeformTuple(gpcodegen::CodeGenUtils* codegen_utils);
 };
 
