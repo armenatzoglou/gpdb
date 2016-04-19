@@ -1756,9 +1756,12 @@ ExecEndNode(PlanState *node)
 			break;
 	}
 
-	Assert(NULL != node->CodegenManager);
-	CodeGeneratorManagerDestroy(node->CodegenManager);
-	node->CodegenManager = NULL;
+	if (codegen)
+	{
+		Assert(NULL != node->CodegenManager);
+		CodeGeneratorManagerDestroy(node->CodegenManager);
+		node->CodegenManager = NULL;
+	}
 
 	estate->currentSliceIdInPlan = origSliceIdInPlan;
 	estate->currentExecutingSliceId = origExecutingSliceId;
