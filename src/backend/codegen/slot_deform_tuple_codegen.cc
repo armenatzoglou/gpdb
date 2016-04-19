@@ -54,7 +54,7 @@ SlotDeformTupleCodeGen::SlotDeformTupleCodeGen(TupleTableSlot* slot,
 }
 
 static void ElogWrapper(const char* message) {
-	elog(INFO, "%s\n", message);
+	elog(INFO, "ElogWrapper: %s\n", message);
 }
 
 extern void slot_deform_tuple(TupleTableSlot *slot, int natts);
@@ -62,7 +62,11 @@ extern void slot_deform_tuple(TupleTableSlot *slot, int natts);
 bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
     gpcodegen::CodeGenUtils* codegen_utils) {
 
-  elog(INFO, "Entering GenerateSlotDeformTuple\n");
+  llvm::Function* llvm_elog_wrapper = codegen_utils->RegisterExternalFunction(
+		  ElogWrapper);
+  assert(llvm_elog_wrapper != nullptr);
+
+  //elog(INFO, "Entering GenerateSlotDeformTuple\n");
 
   TupleDesc tupleDesc = slot_->tts_tupleDescriptor;
   int natts = tupleDesc->natts;
@@ -85,6 +89,15 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
       "gen_code_case", slot_deform_tuple_func);
 
   irb->SetInsertPoint(entry_block);
+
+  llvm::Value* func_name_llvm = codegen_utils->GetConstant(
+		  GetOrigFuncName().c_str());
+
+//  const char* log_msg = "inside entry_block.";
+//    llvm::Value* llvm_log_msg = codegen_utils->GetConstant(
+//        log_msg);
+    codegen_utils->ir_builder()->CreateCall(llvm_elog_wrapper,
+          { func_name_llvm });
 
   llvm::Value* llvm_slot = codegen_utils->GetConstant(slot_);
   /* Extract heap tuple from slot */
@@ -136,10 +149,6 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
   /* Implement fallback */
   irb->SetInsertPoint(fallback_case);
 
-  llvm::Function* llvm_elog_wrapper = codegen_utils->RegisterExternalFunction(
-        ElogWrapper);
-  assert(llvm_elog_wrapper != nullptr);
-
   const char* fallback_log_msg = "Falling back to regular slot_deform_tuple.";
   llvm::Value* llvm_fallback_log_msg = codegen_utils->GetConstant(
       fallback_log_msg);
@@ -188,7 +197,7 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
 
     if (thisatt->attlen < 0)
     {
-       elog(INFO, "Exiting GenerateSlotDeformTuple unsuccessfully: variable attribute: name = %s, attrnum = %d, length = %d\n", thisatt->attname, attnum, thisatt->attlen);
+    //   elog(INFO, "Exiting GenerateSlotDeformTuple unsuccessfully: variable attribute: name = %s, attrnum = %d, length = %d\n", thisatt->attname, attnum, thisatt->attlen);
       /* Manager will clean up incomplete generated code. */
       return false;
     }
@@ -231,7 +240,7 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
                   next_address_load, codegen_utils->GetType<int64*>()));
           break;
         default:
-           elog(INFO, "Exiting GenerateSlotDeformTuple unsuccessfully: unsupported type, attribute length = %d\n", thisatt->attlen);
+   //        elog(INFO, "Exiting GenerateSlotDeformTuple unsuccessfully: unsupported type, attribute length = %d\n", thisatt->attlen);
           /* Manager will clean up the incomplete generated code. */
           return false;
       }
@@ -266,8 +275,8 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
   irb->CreateRetVoid();
 
 
-  elog(INFO, "Exiting GenerateSlotDeformTuple successfully, attnum = %d", attnum);
-  elog(INFO, "Exiting GenerateSlotDeformTuple successfully\n");
+//  elog(INFO, "Exiting GenerateSlotDeformTuple successfully, attnum = %d", attnum);
+//  elog(INFO, "Exiting GenerateSlotDeformTuple successfully\n");
 
   return true;
 }
@@ -276,7 +285,9 @@ bool SlotDeformTupleCodeGen::GenerateSlotDeformTuple(
 bool SlotDeformTupleCodeGen::DoCodeGeneration(CodeGenUtils* codegen_utils) {
 	//elog(INFO, "GenerateCode: %p, %s", codegen_utils, GetUniqueFuncName().c_str());
 
-	GenerateSlotDeformTuple(codegen_utils);
+	bool isGenerated = GenerateSlotDeformTuple(codegen_utils);
+
+	elog(INFO, "slot_deform_tuple is generated correctly!");
 
 	return true;
 }

@@ -1161,7 +1161,7 @@ slot_deform_tuple(TupleTableSlot *slot, int natts)
 		slow = slot->PRIVATE_tts_slow;
 	}
 
-	elog(INFO, "Calling slot_deform_tuple, attnum = %d", attnum);
+	elog(INFO, "Calling regular slot_deform_tuple, attnum = %d", attnum);
 
 	tp = (char *) tup + tup->t_hoff;
 
@@ -1209,7 +1209,7 @@ slot_deform_tuple(TupleTableSlot *slot, int natts)
 	slot->PRIVATE_tts_off = off;
 	slot->PRIVATE_tts_slow = slow;
 
-	elog(INFO, "Exiting slot_deform_tuple, attnum = %d", attnum);
+//	elog(INFO, "Exiting slot_deform_tuple, attnum = %d", attnum);
 }
 
 /*

@@ -40,6 +40,9 @@
 //#include "c.h"
 //#include "catalog/pg_attribute.h"
 
+extern "C" {
+#include "utils/elog.h"
+}
 using namespace gpcodegen;
 
 CodeGenManager::CodeGenManager() {
@@ -59,6 +62,8 @@ size_t CodeGenManager::GenerateCode() {
 	for(auto& generator : enrolled_code_generators_) {
 		success_count += (generator->GenerateCode(codegen_utils_.get()) == true ? 1 : 0);
 	}
+
+	elog(INFO, "%d functions generated correctly", success_count);
 
 	return success_count;
 }
