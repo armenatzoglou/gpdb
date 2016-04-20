@@ -9,13 +9,9 @@ QDDIR=$DATADIRS/qddir
 
 SEG_PREFIX=demoDataDir
 
-declare -a DIRVEC=($DATADIRS/dbfast1 \
-                   $DATADIRS/dbfast2 \
-                   $DATADIRS/dbfast3 )
+declare -a DIRVEC=($DATADIRS/dbfast1 )
 
-declare -a DIRVEC_MIRROR=($DATADIRS/dbfast_mirror1 \
-                          $DATADIRS/dbfast_mirror2 \
-                          $DATADIRS/dbfast_mirror3 )
+declare -a DIRVEC_MIRROR=($DATADIRS/dbfast_mirror1 )
 
 # ======================================================================
 # DATABASE PORTS

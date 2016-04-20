@@ -5882,6 +5882,8 @@ ExecVariableList(ProjectionInfo *projInfo,
 		TupleTableSlot *varSlot = *((TupleTableSlot **) slotptr);
 		int			varNumber = varNumbers[i] - 1;
 
+		elog(INFO, "ExecVariableList: projInfo = %x, slot = %x, i = %d, attrnum = %d", projInfo, varSlot, i, varNumber+1);
+
 		values[i] = slot_getattr(varSlot, varNumber+1, &(isnull[i])); 
 	}
 }

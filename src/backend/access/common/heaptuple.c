@@ -1146,6 +1146,7 @@ slot_deform_tuple(TupleTableSlot *slot, int natts)
 	bits8	   *bp = tup->t_bits;		/* ptr to null bitmap in tuple */
 	bool		slow;			/* can we use/set attcacheoff? */
 
+	elog(INFO, ".. slot_deform_tuple: slot = %x, natts = %d, nvalid = %d", slot, natts, slot->PRIVATE_tts_nvalid);
 	/*
 	 * Check whether the first call for this tuple, and initialize or restore
 	 * loop state.

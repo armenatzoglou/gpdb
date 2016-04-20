@@ -351,6 +351,8 @@ static inline Datum slot_getattr(TupleTableSlot *slot, int attnum, bool *isnull)
 	/* Slow: heap tuple */
 	Assert(TupHasHeapTuple(slot));
 
+	elog(INFO, ". Not memtuple or virtuple.");
+
 	_slot_getsomeattrs(slot, attnum);
 	Assert(TupHasVirtualTuple(slot) && slot->PRIVATE_tts_nvalid >= attnum);
 	*isnull = slot->PRIVATE_tts_isnull[attnum-1];
