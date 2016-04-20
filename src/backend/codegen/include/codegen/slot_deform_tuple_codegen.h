@@ -56,6 +56,8 @@ class SlotDeformTupleCodegen: public BaseCodegen<SlotDeformTupleFn> {
    * @return true on successful generation.
    **/
   bool GenerateSimpleSlotDeformTuple(gpcodegen::CodegenUtils* codegen_utils);
+
+  bool GenerateSlotDeformTuple(gpcodegen::CodegenUtils* codegen_utils);
 };
 
 /** @} */
