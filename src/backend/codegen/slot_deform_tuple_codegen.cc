@@ -59,45 +59,6 @@ static void ElogWrapper(const char* func_name) {
   elog(INFO, "Calling wrapped function: %s", func_name);
 }
 
-bool SlotDeformTupleCodegen::GenerateSimpleSlotDeformTuple(
-    gpcodegen::CodegenUtils* codegen_utils) {
-  llvm::Function* llvm_elog_wrapper = codegen_utils->RegisterExternalFunction(
-      ElogWrapper);
-  assert(llvm_elog_wrapper != nullptr);
-
-  SlotDeformTupleFn regular_func_pointer = GetRegularFuncPointer();
-  llvm::Function* llvm_regular_function =
-      codegen_utils->RegisterExternalFunction(regular_func_pointer);
-  assert(llvm_regular_function != nullptr);
-
-  llvm::Function* llvm_function =
-      codegen_utils->CreateFunction<SlotDeformTupleFn>(
-          GetUniqueFuncName());
-
-  llvm::BasicBlock* function_body = codegen_utils->CreateBasicBlock(
-      "fn_body", llvm_function);
-
-  codegen_utils->ir_builder()->SetInsertPoint(function_body);
-  llvm::Value* func_name_llvm = codegen_utils->GetConstant(
-      GetOrigFuncName().c_str());
-  codegen_utils->ir_builder()->CreateCall(
-      llvm_elog_wrapper, { func_name_llvm });
-
-  std::vector<llvm::Value*> forwarded_args;
-
-  for (llvm::Argument& arg : llvm_function->args()) {
-    forwarded_args.push_back(&arg);
-  }
-
-  llvm::CallInst* call = codegen_utils->ir_builder()->CreateCall(
-      llvm_regular_function, forwarded_args);
-
-  codegen_utils->ir_builder()->CreateRetVoid();
-
-  return true;
-}
-
-
 bool SlotDeformTupleCodegen::GenerateSlotDeformTuple(
     gpcodegen::CodegenUtils* codegen_utils) {
 
@@ -315,11 +276,13 @@ bool SlotDeformTupleCodegen::GenerateSlotDeformTuple(
 
 
 bool SlotDeformTupleCodegen::GenerateCodeInternal(CodegenUtils* codegen_utils) {
-  //GenerateSimpleSlotDeformTuple(codegen_utils);
   bool isGenerated = GenerateSlotDeformTuple(codegen_utils);
 
   if (isGenerated)
+  {
     elog(INFO, "slot_deform_tuple is generated correctly!");
+    return true;
+  }
 
-  return true;
+  return false;
 }

@@ -50,13 +50,11 @@ class SlotDeformTupleCodegen: public BaseCodegen<SlotDeformTupleFn> {
   static constexpr char kSlotDeformTupleNamePrefix[] = "slot_deform_tuple";
 
   /**
-   * @brief Generates runtime code that calls slot_deform_tuple as an external function.
+   * @brief Generates runtime code that implements slot_deform_tuple.
    *
    * @param codegen_utils Utility to ease the code generation process.
    * @return true on successful generation.
    **/
-  bool GenerateSimpleSlotDeformTuple(gpcodegen::CodegenUtils* codegen_utils);
-
   bool GenerateSlotDeformTuple(gpcodegen::CodegenUtils* codegen_utils);
 };
 
