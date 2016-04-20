@@ -55,8 +55,8 @@ SlotDeformTupleCodegen::SlotDeformTupleCodegen(
             ptr_to_regular_func_ptr), slot_(slot) {
 }
 
-static void ElogWrapper(const char* func_name) {
-  elog(INFO, "Calling wrapped function: %s", func_name);
+static void ElogWrapper(const char* message) {
+  elog(INFO, "%s\n", message);
 }
 
 bool SlotDeformTupleCodegen::GenerateSlotDeformTuple(
@@ -92,7 +92,7 @@ bool SlotDeformTupleCodegen::GenerateSlotDeformTuple(
   llvm::Value* func_name_llvm = codegen_utils->GetConstant(
 		  GetOrigFuncName().c_str());
 
-  const char* log_msg = "inside entry_block.";
+  const char* log_msg = "Executing jit slot_deform_tuple";
     llvm::Value* llvm_log_msg = codegen_utils->GetConstant(
         log_msg);
     codegen_utils->ir_builder()->CreateCall(llvm_elog_wrapper,
@@ -280,7 +280,7 @@ bool SlotDeformTupleCodegen::GenerateCodeInternal(CodegenUtils* codegen_utils) {
 
   if (isGenerated)
   {
-    elog(INFO, "slot_deform_tuple is generated correctly!");
+    elog(INFO, "slot_deform_tuple was generated successfully!");
     return true;
   }
 
