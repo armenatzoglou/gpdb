@@ -59,6 +59,15 @@ static void ElogWrapper(const char* message) {
   elog(INFO, "%s\n", message);
 }
 
+static void llvm_debug_elog(gpcodegen::CodegenUtils* codegen_utils,
+		llvm::Function* llvm_elog_wrapper,
+		const char* log_msg){
+	llvm::Value* llvm_log_msg = codegen_utils->GetConstant(
+		log_msg);
+	codegen_utils->ir_builder()->CreateCall(llvm_elog_wrapper,
+		  { llvm_log_msg });
+}
+
 bool SlotDeformTupleCodegen::GenerateSlotDeformTuple(
     gpcodegen::CodegenUtils* codegen_utils) {
 
@@ -67,7 +76,7 @@ bool SlotDeformTupleCodegen::GenerateSlotDeformTuple(
   assert(llvm_elog_wrapper != nullptr);
 
   TupleDesc tupleDesc = slot_->tts_tupleDescriptor;
-  int natts = tupleDesc->natts;
+  int tuple_desc_natts = tupleDesc->natts;
 
   auto irb = codegen_utils->ir_builder();
 
@@ -87,16 +96,15 @@ bool SlotDeformTupleCodegen::GenerateSlotDeformTuple(
   llvm::BasicBlock* gen_code_case = codegen_utils->CreateBasicBlock(
       "gen_code_case", slot_deform_tuple_func);
 
+  /*
+   * Entry Block
+   */
   irb->SetInsertPoint(entry_block);
 
   llvm::Value* func_name_llvm = codegen_utils->GetConstant(
 		  GetOrigFuncName().c_str());
 
-  const char* log_msg = "Executing jit slot_deform_tuple";
-    llvm::Value* llvm_log_msg = codegen_utils->GetConstant(
-        log_msg);
-    codegen_utils->ir_builder()->CreateCall(llvm_elog_wrapper,
-          { llvm_log_msg });
+  llvm_debug_elog(codegen_utils, llvm_elog_wrapper, "Executing jit slot_deform_tuple");
 
   llvm::Value* llvm_slot = codegen_utils->GetConstant(slot_);
   /* Extract heap tuple from slot */
@@ -187,13 +195,13 @@ bool SlotDeformTupleCodegen::GenerateSlotDeformTuple(
   llvm::Value* bool_size_const = codegen_utils->GetConstant(sizeof(bool));
 
   int off = 0;
-
   Form_pg_attribute *att = tupleDesc->attrs;
-  for (int attnum = 0; attnum < natts; attnum++)
+  for (int attnum = 0; attnum < tuple_desc_natts; attnum++)
   {
     Form_pg_attribute thisatt = att[attnum];
     off = att_align(off, thisatt->attalign);
 
+    // If any thisatt is varlen
     if (thisatt->attlen < 0)
     {
       /* Manager will clean up incomplete generated code. */
@@ -263,7 +271,7 @@ bool SlotDeformTupleCodegen::GenerateSlotDeformTuple(
   assert(nullptr != llvm_memset);
 
   llvm::Value* llvm_fill_size = codegen_utils->GetConstant(
-      natts * sizeof(*slot_->PRIVATE_tts_isnull));
+      tuple_desc_natts * sizeof(*slot_->PRIVATE_tts_isnull));
   llvm::Value* llvm_fill_val = codegen_utils->GetConstant(0);
 
   llvm::CallInst* call_llvm_memset = codegen_utils->ir_builder()->CreateCall(
