@@ -190,7 +190,7 @@ ExecVariableListCodegenEnroll(ExecVariableListFn regular_func_ptr,
 		slot->slot_deform_tuple_gen_info.slot_deform_tuple_fn(slot, attno)
 
 #define call_ExecVariableList(projInfo, values, isnull) \
-		slot->ExecVariableList_gen_info.ExecVariableList_fn(projInfo, values, isnull)
+		projInfo->ExecVariableList_gen_info.ExecVariableList_fn(projInfo, values, isnull)
 /*
  * Enroll given slot to codegen manager.
  * The enrollment process also ensures that the slot_deform_tuple_fn pointer

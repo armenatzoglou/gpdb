@@ -88,47 +88,17 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
 		  ElogWrapper);
   assert(llvm_elog_wrapper != nullptr);
 
-  auto irb = codegen_utils->ir_builder();
-
   COMPILE_ASSERT(sizeof(Datum) == sizeof(int64));
-
-  llvm::Function* ExecVariableList_func = codegen_utils->
-		  CreateFunction<ExecVariableListFn>(
-				  GetUniqueFuncName());
-
-  /*
-   * List of Basic blocks
-   */
-  /* BasicBlock of function entry. */
-  llvm::BasicBlock* entry_block = codegen_utils->CreateBasicBlock(
-      "entry", ExecVariableList_func);
-  /* BasicBlock for fallback. */
-  llvm::BasicBlock* fallback_block = codegen_utils->CreateBasicBlock(
-      "fallback", ExecVariableList_func);
-
-  llvm::Value* llvm_projInfo = ArgumentByPosition(ExecVariableList_func, 0);
-  llvm::Value* llvm_values = ArgumentByPosition(ExecVariableList_func, 1);
-  llvm::Value* llvm_is_null = ArgumentByPosition(ExecVariableList_func, 2);
-
-  /*
-   * Entry Block
-   */
-  irb->SetInsertPoint(entry_block);
-
-  llvm::Value* llvm_econtext =
-		  irb->CreateLoad(codegen_utils->GetPointerToMember(
-				  llvm_projInfo, &ProjectionInfo::pi_exprContext));
-  llvm::Value* llvm_varSlotOffsets =
-  		  irb->CreateLoad(codegen_utils->GetPointerToMember(
-  				  llvm_projInfo, &ProjectionInfo::pi_varSlotOffsets));
-  llvm::Value* llvm_varNumbers =
-  		  irb->CreateLoad(codegen_utils->GetPointerToMember(
-  				  llvm_projInfo, &ProjectionInfo::pi_varNumbers));
 
   /*
    * Only do codegen if all the elements in this target list are on the same tuple slot
    * This is an OK assumption for scan nodes, but might fail when joins are involved.
    */
+  if ( NULL == proj_info_->pi_varSlotOffsets ) {
+	// Being in this state is ridiculous - we fucked up!
+    elog(INFO, "Cannot codegen ExecVariableList because varSlotOffsets are null");
+    return false;
+  }
   for (int i = list_length(proj_info_->pi_targetlist) - 1; i > 0; i--){
 	  if (proj_info_->pi_varSlotOffsets[i] != proj_info_->pi_varSlotOffsets[i-1]){
 		  elog(INFO, "Cannot codegen ExecVariableList because multiple slots to deform.");
@@ -141,19 +111,56 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
   char	   *slotptr = ((char *) proj_info_->pi_exprContext) + proj_info_->pi_varSlotOffsets[0];
   TupleTableSlot *slot = *((TupleTableSlot **) slotptr);
   llvm::Value* llvm_slotptr = codegen_utils->GetConstant(slot);
+  llvm::Function* ExecVariableList_func = codegen_utils->
+		  CreateFunction<ExecVariableListFn>(
+				  GetUniqueFuncName());
+
+
+  auto irb = codegen_utils->ir_builder();
+  /* BasicBlock of function entry. */
+  llvm::BasicBlock* entry_block = codegen_utils->CreateBasicBlock(
+      "entry", ExecVariableList_func);
+  /* BasicBlock for fallback. */
+  llvm::BasicBlock* fallback_block = codegen_utils->CreateBasicBlock(
+      "fallback", ExecVariableList_func);
+
+  // Method arguments
+  llvm::Value* llvm_projInfo = ArgumentByPosition(ExecVariableList_func, 0);
+  llvm::Value* llvm_values = ArgumentByPosition(ExecVariableList_func, 1);
+  llvm::Value* llvm_is_null = ArgumentByPosition(ExecVariableList_func, 2);
 
   /*
-   * slot_getattr
+   * Entry Block
+   */
+  irb->SetInsertPoint(entry_block);
+
+  //llvm::Value* llvm_econtext =
+  //		  irb->CreateLoad(codegen_utils->GetPointerToMember(
+  //				  llvm_projInfo, &ProjectionInfo::pi_exprContext));
+  //llvm::Value* llvm_varSlotOffsets =
+  //		  irb->CreateLoad(codegen_utils->GetPointerToMember(
+  //				  llvm_projInfo, &ProjectionInfo::pi_varSlotOffsets));
+  //llvm::Value* llvm_varNumbers =
+  //		  irb->CreateLoad(codegen_utils->GetPointerToMember(
+  //				  llvm_projInfo, &ProjectionInfo::pi_varNumbers));
+
+
+  /*
+   * implementing slot_getattr
    */
 
   /* System attribute */
   if(max_attr <= 0)
 	return false;
-  /* This needs to be at runtime */
-  if (slot->PRIVATE_tts_flags & TTS_VIRTUAL || slot->PRIVATE_tts_memtuple != NULL)
-	return false;
+  // TODO: Move these checks out if possible.
+  //  if (slot->PRIVATE_tts_flags & TTS_VIRTUAL || slot->PRIVATE_tts_memtuple != NULL)
+  //	return false;
+  //  if(TupHasMemTuple(slot))
+  //	  return memtuple_getattr(slot->PRIVATE_tts_memtuple, slot->tts_mt_bind, attnum, isnull);
 
 
+  // Go straight to the fallback block
+  irb->CreateBr(fallback_block);
 
   irb->SetInsertPoint(fallback_block);
   const char* fallback_log_msg = "Falling back to regular ExecVariableList.";
