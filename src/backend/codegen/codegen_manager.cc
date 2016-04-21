@@ -43,6 +43,7 @@ extern "C" {
 using gpcodegen::CodegenManager;
 
 CodegenManager::CodegenManager(const std::string& module_name) {
+  module_name_ = module_name;
   codegen_utils_.reset(new gpcodegen::CodegenUtils(module_name));
 }
 
@@ -65,12 +66,26 @@ unsigned int CodegenManager::GenerateCode() {
 }
 
 unsigned int CodegenManager::PrepareGeneratedFunctions() {
+  if ( enrolled_code_generators_.empty()) {
+	  return 0;
+  }
+
+  std::string error_msg = "";
   // Call CodegenUtils to compile entire module
   bool compilation_status = codegen_utils_->PrepareForExecution(
-      gpcodegen::CodegenUtils::OptimizationLevel::kNone, true);
+      gpcodegen::CodegenUtils::OptimizationLevel::kNone, true, error_msg);
 
   unsigned int success_count = 0;
-	elog(INFO, "CodegenManager::PrepareGeneratedFunctions compilation_status %d ", compilation_status);
+  if (compilation_status)
+  {
+	  elog(INFO, "%s CodegenManager::PrepareGeneratedFunctions compilation_status %d", module_name_.c_str(),
+	  			compilation_status);
+  }
+  else
+  {
+	elog(INFO, "%s CodegenManager::PrepareGeneratedFunctions compilation_status %d : error = %s ", module_name_.c_str(),
+			compilation_status, error_msg.c_str());
+  }
 
   if (!compilation_status) {
     return success_count;

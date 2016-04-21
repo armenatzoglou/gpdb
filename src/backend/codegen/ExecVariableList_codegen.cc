@@ -207,14 +207,11 @@ bool ExecVariableListCodegen::GenerateCodeInternal(CodegenUtils* codegen_utils) 
   if (isGenerated)
   {
     elog(INFO, "ExecVariableList was generated successfully!");
-    codegen_utils->PrepareForExecution(gpcodegen::CodegenUtils::OptimizationLevel::kNone, true);
     return true;
   }
   else
   {
     elog(INFO, "ExecVariableList generation failed!");
-    return true;
+    return false;
   }
-
-  return false;
 }
