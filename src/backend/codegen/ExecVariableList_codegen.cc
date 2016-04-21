@@ -71,8 +71,14 @@ static void llvm_debug_elog(gpcodegen::CodegenUtils* codegen_utils,
 		  { llvm_log_msg });
 }
 
-int GetMaxAttrFromTargetList(List* targetlist) {
-	return -1;
+int GetMax(int* numbers, int length) {
+	int i, max=-1;
+	for(i=0; i < length; i++){
+		if ( numbers[i] > max ) {
+			max = numbers[i];
+		}
+	}
+	return max;
 }
 
 bool ExecVariableListCodegen::GenerateExecVariableList(
@@ -96,6 +102,9 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
   /* BasicBlock of function entry. */
   llvm::BasicBlock* entry_block = codegen_utils->CreateBasicBlock(
       "entry", ExecVariableList_func);
+  /* BasicBlock for fallback. */
+  llvm::BasicBlock* fallback_block = codegen_utils->CreateBasicBlock(
+      "fallback", ExecVariableList_func);
 
   llvm::Value* llvm_projInfo = ArgumentByPosition(ExecVariableList_func, 0);
   llvm::Value* llvm_values = ArgumentByPosition(ExecVariableList_func, 1);
@@ -116,14 +125,37 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
   		  irb->CreateLoad(codegen_utils->GetPointerToMember(
   				  llvm_projInfo, &ProjectionInfo::pi_varNumbers));
 
-  int max_attr = GetMaxAttrFromTargetList(NULL); // Find the max attribute in projInfo->pi_targetlist
+  /*
+   * Only do codegen if all the elements in this target list are on the same tuple slot
+   * This is an OK assumption for scan nodes, but might fail when joins are involved.
+   */
+  for (int i = list_length(proj_info_->pi_targetlist) - 1; i > 0; i--){
+	  if (proj_info_->pi_varSlotOffsets[i] != proj_info_->pi_varSlotOffsets[i-1]){
+		  elog(INFO, "Cannot codegen ExecVariableList because multiple slots to deform.");
+		  return false;
+	  }
+  }
+  // Find the max attribute in projInfo->pi_targetlist
+  int max_attr = GetMax(proj_info_->pi_varNumbers, list_length(proj_info_->pi_targetlist));
+
+  char	   *slotptr = ((char *) proj_info_->pi_exprContext) + proj_info_->pi_varSlotOffsets[0];
+  TupleTableSlot *slot = *((TupleTableSlot **) slotptr);
+  llvm::Value* llvm_slotptr = codegen_utils->GetConstant(slot);
+
+  /*
+   * slot_getattr
+   */
+
+  /* System attribute */
+  if(max_attr <= 0)
+	return false;
+  /* This needs to be at runtime */
+  if (slot->PRIVATE_tts_flags & TTS_VIRTUAL || slot->PRIVATE_tts_memtuple != NULL)
+	return false;
 
 
 
-
-
-
-
+  irb->SetInsertPoint(fallback_block);
   const char* fallback_log_msg = "Falling back to regular ExecVariableList.";
   llvm::Value* llvm_fallback_log_msg = codegen_utils->GetConstant(
       fallback_log_msg);
