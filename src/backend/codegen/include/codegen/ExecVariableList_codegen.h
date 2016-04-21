@@ -37,7 +37,7 @@ class ExecVariableListCodegen: public BaseCodegen<ExecVariableListFn> {
    **/
   explicit ExecVariableListCodegen(ExecVariableListFn regular_func_ptr,
                                   ExecVariableListFn* ptr_to_regular_func_ptr,
-                                  TupleTableSlot* slot);
+                                  ProjectionInfo* proj_info);
 
   virtual ~ExecVariableListCodegen() = default;
 
@@ -45,7 +45,7 @@ class ExecVariableListCodegen: public BaseCodegen<ExecVariableListFn> {
   bool GenerateCodeInternal(gpcodegen::CodegenUtils* codegen_utils) final;
 
  private:
-  TupleTableSlot* slot_;
+  ProjectionInfo* proj_info_;
 
   static constexpr char kExecVariableListPrefix[] = "ExecVariableList";
 

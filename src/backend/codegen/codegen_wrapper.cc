@@ -121,8 +121,8 @@ void* SlotDeformTupleCodegenEnroll(
 void* ExecVariableListCodegenEnroll(
     ExecVariableListFn regular_func_ptr,
     ExecVariableListFn* ptr_to_chosen_func_ptr,
-    TupleTableSlot* slot) {
+    ProjectionInfo* proj_info) {
   ExecVariableListCodegen* generator = CodegenEnroll<ExecVariableListCodegen>(
-      regular_func_ptr, ptr_to_chosen_func_ptr, slot);
+      regular_func_ptr, ptr_to_chosen_func_ptr, proj_info);
   return generator;
 }

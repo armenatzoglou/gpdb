@@ -35,6 +35,7 @@
 #include "llvm/Support/Casting.h"
 #include "postgres.h"
 #include "access/htup.h"
+#include "nodes/execnodes.h"
 #include "executor/tuptable.h"
 
 extern "C" {
@@ -49,11 +50,12 @@ ExecVariableListCodegen::ExecVariableListCodegen
 (
     ExecVariableListFn regular_func_ptr,
     ExecVariableListFn* ptr_to_regular_func_ptr,
-    TupleTableSlot* slot) :
+    ProjectionInfo* proj_info) :
         BaseCodegen(
             kExecVariableListPrefix,
             regular_func_ptr,
-            ptr_to_regular_func_ptr), slot_(slot) {
+            ptr_to_regular_func_ptr),
+		proj_info_(proj_info) {
 }
 
 static void ElogWrapper(const char* message) {
@@ -67,6 +69,10 @@ static void llvm_debug_elog(gpcodegen::CodegenUtils* codegen_utils,
 		log_msg);
 	codegen_utils->ir_builder()->CreateCall(llvm_elog_wrapper,
 		  { llvm_log_msg });
+}
+
+int GetMaxAttrFromTargetList(List* targetlist) {
+	return -1;
 }
 
 bool ExecVariableListCodegen::GenerateExecVariableList(
@@ -84,14 +90,39 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
 		  CreateFunction<ExecVariableListFn>(
 				  GetUniqueFuncName());
 
+  /*
+   * List of Basic blocks
+   */
   /* BasicBlock of function entry. */
   llvm::BasicBlock* entry_block = codegen_utils->CreateBasicBlock(
       "entry", ExecVariableList_func);
+
+  llvm::Value* llvm_projInfo = ArgumentByPosition(ExecVariableList_func, 0);
+  llvm::Value* llvm_values = ArgumentByPosition(ExecVariableList_func, 1);
+  llvm::Value* llvm_is_null = ArgumentByPosition(ExecVariableList_func, 2);
 
   /*
    * Entry Block
    */
   irb->SetInsertPoint(entry_block);
+
+  llvm::Value* llvm_econtext =
+		  irb->CreateLoad(codegen_utils->GetPointerToMember(
+				  llvm_projInfo, &ProjectionInfo::pi_exprContext));
+  llvm::Value* llvm_varSlotOffsets =
+  		  irb->CreateLoad(codegen_utils->GetPointerToMember(
+  				  llvm_projInfo, &ProjectionInfo::pi_varSlotOffsets));
+  llvm::Value* llvm_varNumbers =
+  		  irb->CreateLoad(codegen_utils->GetPointerToMember(
+  				  llvm_projInfo, &ProjectionInfo::pi_varNumbers));
+
+  int max_attr = GetMaxAttrFromTargetList(NULL); // Find the max attribute in projInfo->pi_targetlist
+
+
+
+
+
+
 
   const char* fallback_log_msg = "Falling back to regular ExecVariableList.";
   llvm::Value* llvm_fallback_log_msg = codegen_utils->GetConstant(

@@ -44,7 +44,7 @@ typedef void (*ExecVariableListFn) (struct ProjectionInfo *projInfo, Datum *valu
 #define call_slot_deform_tuple(slot, attno) slot_deform_tuple(slot, attno)
 #define call_ExecVariableList(projInfo, values, isnull) ExecVariableList(projInfo, values, isnull)
 #define enroll_slot_deform_tuple_codegen(regular_func, ptr_to_chosen_func, slot)
-#define enroll_ExecVariableList(regular_func, ptr_to_chosen_func, slot)
+#define enroll_ExecVariableList(regular_func, ptr_to_chosen_func, proj_info)
 
 #else
 
@@ -140,7 +140,7 @@ SlotDeformTupleCodegenEnroll(SlotDeformTupleFn regular_func_ptr,
 void*
 ExecVariableListCodegenEnroll(ExecVariableListFn regular_func_ptr,
                               ExecVariableListFn* ptr_to_regular_func_ptr,
-                              struct TupleTableSlot* slot);
+                              struct ProjectionInfo* proj_info);
 
 #ifdef __cplusplus
 }  // extern "C"
@@ -201,10 +201,10 @@ ExecVariableListCodegenEnroll(ExecVariableListFn regular_func_ptr,
 				regular_func, ptr_to_regular_func_ptr, slot); \
 		Assert(slot->slot_deform_tuple_gen_info.slot_deform_tuple_fn == regular_func); \
 
-#define enroll_ExecVariableList_codegen(regular_func, ptr_to_regular_func_ptr, slot) \
-		slot->ExecVariableList_gen_info.code_generator = ExecVariableListCodegenEnroll( \
-				regular_func, ptr_to_regular_func_ptr, slot); \
-		Assert(slot->ExecVariableList_gen_info.ExecVariableList_fn == regular_func); \
+#define enroll_ExecVariableList_codegen(regular_func, ptr_to_regular_func_ptr, proj_info) \
+		proj_info->ExecVariableList_gen_info.code_generator = ExecVariableListCodegenEnroll( \
+				regular_func, ptr_to_regular_func_ptr, proj_info); \
+		Assert(proj_info->ExecVariableList_gen_info.ExecVariableList_fn == regular_func); \
 
 #endif //USE_CODEGEN
 

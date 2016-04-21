@@ -823,6 +823,9 @@ ExecBuildProjectionInfo(List *targetList,
 		projInfo->pi_varNumbers = NULL;
 	}
 
+	enroll_ExecVariableList_codegen(ExecVariableList,
+				&projInfo->ExecVariableList_gen_info.ExecVariableList_fn, projInfo);
+
 	return projInfo;
 }
 
