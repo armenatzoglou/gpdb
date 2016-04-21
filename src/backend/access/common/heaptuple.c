@@ -1249,7 +1249,7 @@ _slot_getsomeattrs(TupleTableSlot *slot, int attnum)
 	 * This macro will decide whether to inline regular slot_deform_tuple or
 	 * call regular / generated slot_deform_tuple if USE_CODEGEN is defined
 	 */
-	call_slot_deform_tuple(slot, attno);
+	slot_deform_tuple(slot, attno);
 
 	/*
 	 * If tuple doesn't have all the atts indicated by tupleDesc, read the

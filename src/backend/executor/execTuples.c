@@ -366,6 +366,8 @@ ExecSetSlotDescriptor(TupleTableSlot *slot,		/* slot to change */
 	 */
 	enroll_slot_deform_tuple_codegen(slot_deform_tuple,
 			&slot->slot_deform_tuple_gen_info.slot_deform_tuple_fn, slot);
+	enroll_ExecVariableList_codegen(ExecVariableList,
+				&slot->ExecVariableList_gen_info.ExecVariableList_fn, slot);
 }
 
 /* --------------------------------

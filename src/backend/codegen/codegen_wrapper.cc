@@ -12,6 +12,7 @@
 
 #include "codegen/codegen_wrapper.h"
 #include "codegen/codegen_manager.h"
+#include "codegen/ExecVariableList_codegen.h"
 #include "codegen/slot_deform_tuple_codegen.h"
 
 #include "codegen/utils/codegen_utils.h"
@@ -19,6 +20,7 @@
 using gpcodegen::CodegenManager;
 using gpcodegen::BaseCodegen;
 using gpcodegen::SlotDeformTupleCodegen;
+using gpcodegen::ExecVariableListCodegen;
 
 // Current code generator manager that oversees all code generators
 static void* ActiveCodeGeneratorManager = nullptr;
@@ -116,3 +118,11 @@ void* SlotDeformTupleCodegenEnroll(
   return generator;
 }
 
+void* ExecVariableListCodegenEnroll(
+    ExecVariableListFn regular_func_ptr,
+    ExecVariableListFn* ptr_to_chosen_func_ptr,
+    TupleTableSlot* slot) {
+  ExecVariableListCodegen* generator = CodegenEnroll<ExecVariableListCodegen>(
+      regular_func_ptr, ptr_to_chosen_func_ptr, slot);
+  return generator;
+}

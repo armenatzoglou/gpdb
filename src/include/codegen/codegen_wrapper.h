@@ -13,12 +13,18 @@
 #define CODEGEN_WRAPPER_H_
 
 #include "pg_config.h"
+#include "c.h"
+
+typedef int64 Datum;
 
 /*
  * Code that needs to be shared irrespective of whether USE_CODEGEN is enabled or not.
  */
 struct TupleTableSlot;
+struct ProjectionInfo;
+
 typedef void (*SlotDeformTupleFn) (struct TupleTableSlot *slot, int natts);
+typedef void (*ExecVariableListFn) (struct ProjectionInfo *projInfo, Datum *values, bool *isnull);
 
 #ifndef USE_CODEGEN
 
@@ -36,7 +42,9 @@ typedef void (*SlotDeformTupleFn) (struct TupleTableSlot *slot, int natts);
 
 #define init_codegen()
 #define call_slot_deform_tuple(slot, attno) slot_deform_tuple(slot, attno)
+#define call_ExecVariableList(projInfo, values, isnull) ExecVariableList(projInfo, values, isnull)
 #define enroll_slot_deform_tuple_codegen(regular_func, ptr_to_chosen_func, slot)
+#define enroll_ExecVariableList(regular_func, ptr_to_chosen_func, slot)
 
 #else
 
@@ -44,6 +52,8 @@ typedef void (*SlotDeformTupleFn) (struct TupleTableSlot *slot, int natts);
  * Forward extern declaration of slot deform tuple if code gen is enabled
  */
 extern void slot_deform_tuple(struct TupleTableSlot *slot, int natts);
+
+extern void ExecVariableList(struct ProjectionInfo *projInfo, Datum *values, bool *isnull);
 
 /*
  * @brief Life span of Code generator instance
@@ -127,6 +137,11 @@ SlotDeformTupleCodegenEnroll(SlotDeformTupleFn regular_func_ptr,
                               struct TupleTableSlot* slot);
 
 
+void*
+ExecVariableListCodegenEnroll(ExecVariableListFn regular_func_ptr,
+                              ExecVariableListFn* ptr_to_regular_func_ptr,
+                              struct TupleTableSlot* slot);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
@@ -174,6 +189,8 @@ SlotDeformTupleCodegenEnroll(SlotDeformTupleFn regular_func_ptr,
 #define call_slot_deform_tuple(slot, attno) \
 		slot->slot_deform_tuple_gen_info.slot_deform_tuple_fn(slot, attno)
 
+#define call_ExecVariableList(projInfo, values, isnull) \
+		slot->ExecVariableList_gen_info.ExecVariableList_fn(projInfo, values, isnull)
 /*
  * Enroll given slot to codegen manager.
  * The enrollment process also ensures that the slot_deform_tuple_fn pointer
@@ -184,6 +201,10 @@ SlotDeformTupleCodegenEnroll(SlotDeformTupleFn regular_func_ptr,
 				regular_func, ptr_to_regular_func_ptr, slot); \
 		Assert(slot->slot_deform_tuple_gen_info.slot_deform_tuple_fn == regular_func); \
 
+#define enroll_ExecVariableList_codegen(regular_func, ptr_to_regular_func_ptr, slot) \
+		slot->ExecVariableList_gen_info.code_generator = ExecVariableListCodegenEnroll( \
+				regular_func, ptr_to_regular_func_ptr, slot); \
+		Assert(slot->ExecVariableList_gen_info.ExecVariableList_fn == regular_func); \
 
 #endif //USE_CODEGEN
 

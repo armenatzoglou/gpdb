@@ -122,6 +122,14 @@ typedef struct SlotDeformTupleCodegenInfo
 	SlotDeformTupleFn slot_deform_tuple_fn;
 } SlotDeformTupleCodegenInfo;
 
+typedef struct ExecVariableListCodegenInfo
+{
+	/* Pointer to store SlotDeformTupleCodegen from Codegen */
+	void* code_generator;
+	/* Function pointer that points to either regular or generated slot_deform_tuple */
+	ExecVariableListFn ExecVariableList_fn;
+} ExecVariableListCodegenInfo;
+
 typedef struct TupleTableSlot
 {
 	NodeTag		type;		/* vestigial ... allows IsA tests */
@@ -155,6 +163,7 @@ typedef struct TupleTableSlot
 
 #ifdef USE_CODEGEN
     SlotDeformTupleCodegenInfo slot_deform_tuple_gen_info;
+    ExecVariableListCodegenInfo ExecVariableList_gen_info;
 #endif
 } TupleTableSlot;
 
