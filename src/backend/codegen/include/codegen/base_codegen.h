@@ -14,7 +14,9 @@
 
 #include <string>
 #include <vector>
-
+extern "C" {
+#include "utils/elog.h"
+}
 #include "codegen/utils/codegen_utils.h"
 #include "codegen/codegen_interface.h"
 
@@ -50,6 +52,7 @@ class BaseCodegen: public CodegenInterface {
   bool SetToRegular() final {
     assert(nullptr != regular_func_ptr_);
     SetToRegular(regular_func_ptr_, ptr_to_chosen_func_ptr_);
+	  elog(INFO, "Set to regular");
     return true;
   }
 
@@ -64,6 +67,7 @@ class BaseCodegen: public CodegenInterface {
 
     if (nullptr != compiled_func_ptr) {
       *ptr_to_chosen_func_ptr_ = compiled_func_ptr;
+	  elog(INFO, "Set to generated");
       return true;
     }
     return false;

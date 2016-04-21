@@ -81,6 +81,11 @@ int GetMax(int* numbers, int length) {
 	return max;
 }
 
+static void CreateElogMessage(gpcodegen::CodegenUtils* codegen_utils, llvm::Function* llvm_elog_wrapper, char* message){
+	  llvm::Value* llvm_message = codegen_utils->GetConstant(message);
+	  codegen_utils->ir_builder()->CreateCall(llvm_elog_wrapper, { llvm_message });
+}
+
 bool ExecVariableListCodegen::GenerateExecVariableList(
     gpcodegen::CodegenUtils* codegen_utils) {
 
@@ -133,6 +138,7 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
    * Entry Block
    */
   irb->SetInsertPoint(entry_block);
+  CreateElogMessage(codegen_utils, llvm_elog_wrapper, "OK in generated code!");
 
   //llvm::Value* llvm_econtext =
   //		  irb->CreateLoad(codegen_utils->GetPointerToMember(
@@ -163,11 +169,7 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
   irb->CreateBr(fallback_block);
 
   irb->SetInsertPoint(fallback_block);
-  const char* fallback_log_msg = "Falling back to regular ExecVariableList.";
-  llvm::Value* llvm_fallback_log_msg = codegen_utils->GetConstant(
-      fallback_log_msg);
-  codegen_utils->ir_builder()->CreateCall(llvm_elog_wrapper,
-        { llvm_fallback_log_msg });
+  CreateElogMessage(codegen_utils, llvm_elog_wrapper, "Falling back to regular ExecVariableList");
 
   auto regular_func_pointer = GetRegularFuncPointer();
   llvm::Function* llvm_regular_function =
@@ -205,6 +207,12 @@ bool ExecVariableListCodegen::GenerateCodeInternal(CodegenUtils* codegen_utils) 
   if (isGenerated)
   {
     elog(INFO, "ExecVariableList was generated successfully!");
+    codegen_utils->PrepareForExecution(gpcodegen::CodegenUtils::OptimizationLevel::kNone, true);
+    return true;
+  }
+  else
+  {
+    elog(INFO, "ExecVariableList generation failed!");
     return true;
   }
 
