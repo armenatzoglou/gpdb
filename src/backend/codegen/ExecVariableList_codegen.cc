@@ -99,6 +99,12 @@ static void SetUpElog(gpcodegen::CodegenUtils* codegen_utils) {
 	}
 }
 
+static void TearDownElog(gpcodegen::CodegenUtils* codegen_utils){
+	llvm_fflush_wrapper_ = nullptr;
+	llvm_elog_int_wrapper_ = nullptr;
+	llvm_elog_string_wrapper_ = nullptr;
+}
+
 static void CreateElogInt(gpcodegen::CodegenUtils* codegen_utils,
 		const char* format,
 		llvm::Value* llvm_int_value){
@@ -206,7 +212,7 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
 		  irb->CreateLoad(codegen_utils->GetPointerToMember(
 				  llvm_econtext, &ExprContext::ecxt_scantuple));
 
-  CreateElogString(codegen_utils, "%s\n", codegen_utils->GetConstant("OK in generated code!"));
+  //CreateElogString(codegen_utils, "%s\n", codegen_utils->GetConstant("OK in generated code!"));
   CreateElogInt(codegen_utils, "slot = %x ", irb->CreatePtrToInt(llvm_slot, codegen_utils->GetType<int>()));
   CreateElogInt(codegen_utils, "input_slot = %x \n", irb->CreatePtrToInt(llvm_slot_arg, codegen_utils->GetType<int>()));
 
@@ -315,6 +321,7 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
   }
 
 
+  TearDownElog(codegen_utils);
   return true;
 }
 
