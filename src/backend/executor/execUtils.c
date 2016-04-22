@@ -820,12 +820,6 @@ ExecBuildProjectionInfo(List *targetList,
 		projInfo->pi_lastOuterVar = lastOuterVar;
 		projInfo->pi_lastScanVar = lastScanVar;
 
-
-		elog(INFO, "Enrolling... with econtext = %x", econtext);
-		// We only want to enroll if a varlist is present, else ExecVariableList doesn't get called anyway
-    	enroll_ExecVariableList_codegen(ExecVariableList,
-				&projInfo->ExecVariableList_gen_info.ExecVariableList_fn, projInfo);
-
 	}
 	else
 	{
@@ -835,6 +829,8 @@ ExecBuildProjectionInfo(List *targetList,
 		projInfo->pi_varNumbers = NULL;
 	}
 
+	// Set the default location for ExecVariableList
+	projInfo->ExecVariableList_gen_info.ExecVariableList_fn = ExecVariableList;
 	return projInfo;
 }
 

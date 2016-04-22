@@ -50,12 +50,14 @@ ExecVariableListCodegen::ExecVariableListCodegen
 (
     ExecVariableListFn regular_func_ptr,
     ExecVariableListFn* ptr_to_regular_func_ptr,
-    ProjectionInfo* proj_info) :
+    ProjectionInfo* proj_info,
+	TupleTableSlot* slot) :
         BaseCodegen(
             kExecVariableListPrefix,
             regular_func_ptr,
             ptr_to_regular_func_ptr),
-		proj_info_(proj_info) {
+		proj_info_(proj_info),
+		slot_(slot){
 }
 
 static void ElogWrapper(const char* message) {
