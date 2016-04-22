@@ -49,13 +49,6 @@ typedef void (*ExecVariableListFn) (struct ProjectionInfo *projInfo, Datum *valu
 #else
 
 /*
- * Forward extern declaration of slot deform tuple if code gen is enabled
- */
-extern void slot_deform_tuple(struct TupleTableSlot *slot, int natts);
-
-extern void ExecVariableList(struct ProjectionInfo *projInfo, Datum *values, bool *isnull);
-
-/*
  * @brief Life span of Code generator instance
  *
  * @note Each code generator is responsible to generate code for one specific function.
@@ -76,6 +69,13 @@ typedef enum CodegenFuncLifespan
 
 #ifdef __cplusplus
 extern "C" {
+/*
+ * Forward extern declaration of slot deform tuple if code gen is enabled
+ */
+extern void slot_deform_tuple(struct TupleTableSlot *slot, int natts);
+
+extern void ExecVariableList(struct ProjectionInfo *projInfo, Datum *values, bool *isnull);
+
 #endif
 
 /*

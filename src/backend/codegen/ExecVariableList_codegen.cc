@@ -128,7 +128,6 @@ static void CreateElogString(gpcodegen::CodegenUtils* codegen_utils,
 	codegen_utils->ir_builder()->CreateCall(llvm_fflush_wrapper_, { codegen_utils->GetConstant((FILE *) NULL) });
 }
 
-
 bool ExecVariableListCodegen::GenerateExecVariableList(
     gpcodegen::CodegenUtils* codegen_utils) {
 
@@ -158,6 +157,9 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
   {
 	  elog(INFO, "Cannot generate code for ExecVariableList because max_attr is negative (i.e., system attribute).");
 	  return false;
+  }else if (max_attr > slot_->tts_tupleDescriptor->natts) {
+	  elog(INFO, "Cannot generate code for ExecVariableList because max_attr is greater than natts.");
+	  return false;
   }
 
   /* So looks like we're going to generate code */
@@ -172,18 +174,22 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
   /* BasicBlock of function entry. */
   llvm::BasicBlock* entry_block = codegen_utils->CreateBasicBlock(
       "entry", ExecVariableList_func);
-  /* BasicBlock for main. */
-  llvm::BasicBlock* main_block = codegen_utils->CreateBasicBlock(
-        "main", ExecVariableList_func);
   /* BasicBlock for checking tuple type. */
   llvm::BasicBlock* tuple_type_check_block = codegen_utils->CreateBasicBlock(
         "tuple_type_check", ExecVariableList_func);
+  /* BasicBlock for heap tuple check. */
+  llvm::BasicBlock* heap_tuple_check_block = codegen_utils->CreateBasicBlock(
+      "heap_tuple_check", ExecVariableList_func);
+  /* BasicBlock for main. */
+  llvm::BasicBlock* main_block = codegen_utils->CreateBasicBlock(
+        "main", ExecVariableList_func);
   /* BasicBlock for fallback. */
   llvm::BasicBlock* fallback_block = codegen_utils->CreateBasicBlock(
       "fallback", ExecVariableList_func);
 
   // External functions
   llvm::Function* llvm__slot_getsomeattrs = codegen_utils->RegisterExternalFunction(_slot_getsomeattrs);
+  llvm::Function* llvm_slot_deform_tuple = codegen_utils->RegisterExternalFunction(slot_deform_tuple);
 
   // Constants
   llvm::Value* llvm_max_attr = codegen_utils->GetConstant(max_attr);
@@ -227,16 +233,18 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
    * we fall back if we see a virtual tuple or mem tuple, but it's possible to partially handle those cases also
    */
   irb->SetInsertPoint(tuple_type_check_block);
-  llvm::Value* llvm_slot_PRIVATE_tts_flags =
-    		  irb->CreateLoad(codegen_utils->GetPointerToMember(
-    				  llvm_slot, &TupleTableSlot::PRIVATE_tts_flags));
+  llvm::Value* llvm_slot_PRIVATE_tts_flags_ptr =
+    		  codegen_utils->GetPointerToMember(
+    				  llvm_slot, &TupleTableSlot::PRIVATE_tts_flags);
   llvm::Value* llvm_slot_PRIVATE_tts_memtuple =
       		  irb->CreateLoad(codegen_utils->GetPointerToMember(
       				  llvm_slot, &TupleTableSlot::PRIVATE_tts_memtuple));
 
   /* (slot->PRIVATE_tts_flags & TTS_VIRTUAL) != 0 */
   llvm::Value* llvm_tuple_is_virtual = irb->CreateICmpNE(
-		  irb->CreateAnd(llvm_slot_PRIVATE_tts_flags, codegen_utils->GetConstant(TTS_VIRTUAL)),
+		  irb->CreateAnd(
+				  irb->CreateLoad(llvm_slot_PRIVATE_tts_flags_ptr),
+				  codegen_utils->GetConstant(TTS_VIRTUAL)),
 		  codegen_utils->GetConstant(0));
 
   /* slot->PRIVATE_tts_memtuple != NULL */
@@ -244,25 +252,68 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
 		  llvm_slot_PRIVATE_tts_memtuple, codegen_utils->GetConstant((MemTuple) NULL));
 
   /* Fallback if tuple is virtual or memtuple is null */
-   irb->CreateCondBr(
-		   irb->CreateOr(llvm_tuple_is_virtual, llvm_tuple_has_memtuple),
-		   fallback_block /*true*/, main_block /*false*/);
+  irb->CreateCondBr(
+	   irb->CreateOr(llvm_tuple_is_virtual, llvm_tuple_has_memtuple),
+	   fallback_block /*true*/, heap_tuple_check_block /*false*/);
 
- /*
+  /*
+   * HeapTuple check
+   * _slot_getsomeattrs: TupGetHeapTuple(slot) != NULL
+   */
+  irb->SetInsertPoint(heap_tuple_check_block);
+  llvm::Value* llvm_slot_PRIVATE_tts_heaptuple =
+        		  irb->CreateLoad(codegen_utils->GetPointerToMember(
+        				  llvm_slot, &TupleTableSlot::PRIVATE_tts_heaptuple));
+  llvm::Value* llvm_tuple_has_heaptuple = irb->CreateICmpNE(
+	   llvm_slot_PRIVATE_tts_heaptuple, codegen_utils->GetConstant((HeapTuple) NULL));
+  irb->CreateCondBr(llvm_tuple_has_heaptuple, main_block /*true*/, fallback_block /*false*/);
+
+
+  /*
    * Main block
    */
   irb->SetInsertPoint(main_block);
-  // Go straight to the fallback block
   CreateElogString(codegen_utils, "%s\n", codegen_utils->GetConstant("In Main block."));
-  irb->CreateCall(llvm__slot_getsomeattrs, { llvm_slot, llvm_max_attr});
 
+  /*
+   * attno = HeapTupleHeaderGetNatts(tuple->t_data);
+   * attno = Min(attno, attnum);
+   */
+  llvm::Value* llvm_heaptuple_t_data =
+		  irb->CreateLoad(codegen_utils->GetPointerToMember(
+				  llvm_slot_PRIVATE_tts_heaptuple,
+				  &HeapTupleData::t_data
+				  ));
+  llvm::Value* llvm_heaptuple_t_data_t_infomask2 =
+		  irb->CreateLoad(codegen_utils->GetPointerToMember(
+				  llvm_heaptuple_t_data,
+				  &HeapTupleHeaderData::t_infomask2));
+  llvm::Value* llvm_attno_t0 =
+		  irb->CreateZExt(
+				  irb->CreateAnd(llvm_heaptuple_t_data_t_infomask2,
+					  codegen_utils->GetConstant<int16>(HEAP_NATTS_MASK)),
+				  codegen_utils->GetType<int>());
+
+  llvm::Value* llvm_attno =
+		  irb->CreateSelect(
+				  irb->CreateICmpSLT(llvm_attno_t0, llvm_max_attr),
+				  llvm_attno_t0,
+				  llvm_max_attr
+				  );
+
+  irb->CreateCall(llvm_slot_deform_tuple, { llvm_slot, llvm_attno });
+
+  // slot's PRIVATE variables
   llvm::Value* llvm_slot_PRIVATE_tts_isnull /* bool* */=
     		  irb->CreateLoad(codegen_utils->GetPointerToMember(
     				  llvm_slot, &TupleTableSlot::PRIVATE_tts_isnull));
   llvm::Value* llvm_slot_PRIVATE_tts_values /* Datum* */=
       		  irb->CreateLoad(codegen_utils->GetPointerToMember(
       				  llvm_slot, &TupleTableSlot::PRIVATE_tts_values));
+  llvm::Value* llvm_slot_PRIVATE_tts_nvalid_ptr /* int* */=
+        		  codegen_utils->GetPointerToMember(llvm_slot, &TupleTableSlot::PRIVATE_tts_nvalid);
 
+  /* The loop unrolling magic */
   int  *varNumbers = proj_info_->pi_varNumbers;
   for (int i = list_length(proj_info_->pi_targetlist) - 1; i >= 0; i--)
   {
@@ -285,8 +336,17 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
 			  irb->CreateInBoundsGEP(llvm_values_arg, {codegen_utils->GetConstant(i)});
 	  irb->CreateStore(llvm_value_from_slot_val, llvm_values_ptr);
 	  CreateElogInt(codegen_utils, "isnull = %d", irb->CreateZExt(llvm_isnull_from_slot_val, codegen_utils->GetType<int>()));
-
   }
+  /* slot->PRIVATE_tts_nvalid = attnum; */
+  irb->CreateStore(llvm_max_attr, llvm_slot_PRIVATE_tts_nvalid_ptr);
+
+  /* TupSetVirtualTuple(slot); */
+  irb->CreateStore(
+		  irb->CreateOr(
+				  irb->CreateLoad(llvm_slot_PRIVATE_tts_flags_ptr),
+				  codegen_utils->GetConstant<int>(TTS_VIRTUAL)),
+		  llvm_slot_PRIVATE_tts_flags_ptr);
+
   codegen_utils->ir_builder()->CreateRetVoid();
 
   /*
