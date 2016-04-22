@@ -33,13 +33,13 @@
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/Casting.h"
+
+extern "C" {
 #include "postgres.h"
+#include "utils/elog.h"
 #include "access/htup.h"
 #include "nodes/execnodes.h"
 #include "executor/tuptable.h"
-
-extern "C" {
-#include "utils/elog.h"
 }
 
 using gpcodegen::ExecVariableListCodegen;
@@ -123,14 +123,8 @@ static void CreateElogString(gpcodegen::CodegenUtils* codegen_utils,
 }
 
 
-
-
-static std::string slot_str;
-
 bool ExecVariableListCodegen::GenerateExecVariableList(
     gpcodegen::CodegenUtils* codegen_utils) {
-
-
 
   COMPILE_ASSERT(sizeof(Datum) == sizeof(int64));
 
@@ -161,89 +155,126 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
   }
 
   /* So looks like we're going to generate code */
-
   llvm::Function* ExecVariableList_func = codegen_utils->
 		  CreateFunction<ExecVariableListFn>(
 				  GetUniqueFuncName());
 
-  char *slotptr = ((char *) proj_info_->pi_exprContext) + proj_info_->pi_varSlotOffsets[0];
-  TupleTableSlot *slot = *((TupleTableSlot **) slotptr);
-  llvm::Value* llvm_slot = codegen_utils->GetConstant(slot);
-
-  elog(INFO, "proj_info_ = %x, slot = %x, pi_slot = %x", proj_info_, slot, proj_info_->pi_slot);
-
+  //elog(INFO, "proj_info_ = %x, slot = %x, pi_slot = %x", proj_info_, slot, proj_info_->pi_slot);
 
   auto irb = codegen_utils->ir_builder();
+
   /* BasicBlock of function entry. */
   llvm::BasicBlock* entry_block = codegen_utils->CreateBasicBlock(
       "entry", ExecVariableList_func);
-//  /* BasicBlock for main. */
-//    llvm::BasicBlock* main_block = codegen_utils->CreateBasicBlock(
-//        "main", ExecVariableList_func);
+  /* BasicBlock for main. */
+  llvm::BasicBlock* main_block = codegen_utils->CreateBasicBlock(
+        "main", ExecVariableList_func);
+  /* BasicBlock for checking tuple type. */
+  llvm::BasicBlock* tuple_type_check_block = codegen_utils->CreateBasicBlock(
+        "tuple_type_check", ExecVariableList_func);
   /* BasicBlock for fallback. */
   llvm::BasicBlock* fallback_block = codegen_utils->CreateBasicBlock(
       "fallback", ExecVariableList_func);
 
+  // External functions
+  llvm::Function* llvm__slot_getsomeattrs = codegen_utils->RegisterExternalFunction(_slot_getsomeattrs);
+
+  // Constants
+  llvm::Value* llvm_max_attr = codegen_utils->GetConstant(max_attr);
+  llvm::Value* llvm_slot = codegen_utils->GetConstant(slot_);
+
   // Method arguments
-  llvm::Value* llvm_projInfo = ArgumentByPosition(ExecVariableList_func, 0);
-  llvm::Value* llvm_values = ArgumentByPosition(ExecVariableList_func, 1);
-  llvm::Value* llvm_is_null = ArgumentByPosition(ExecVariableList_func, 2);
+  llvm::Value* llvm_projInfo_arg = ArgumentByPosition(ExecVariableList_func, 0);
+  llvm::Value* llvm_values_arg = ArgumentByPosition(ExecVariableList_func, 1);
+  llvm::Value* llvm_isnull_arg = ArgumentByPosition(ExecVariableList_func, 2);
 
   /*
    * Entry Block
    */
   irb->SetInsertPoint(entry_block);
-  CreateElogString(codegen_utils,"%s\n", codegen_utils->GetConstant("OK in generated code!"));
-  irb->CreateBr(fallback_block);
+  llvm::Value* llvm_econtext =
+  		  irb->CreateLoad(codegen_utils->GetPointerToMember(
+  				  llvm_projInfo_arg, &ProjectionInfo::pi_exprContext));
+  llvm::Value* llvm_varSlotOffsets =
+  		  irb->CreateLoad(codegen_utils->GetPointerToMember(
+  				  llvm_projInfo_arg, &ProjectionInfo::pi_varSlotOffsets));
 
+  // We want to fall back when ExecVariableList is called with a slot that's different from the
+  // one we generated the function (eg HashJoin). We also assume only 1 slot and that the slot is
+  // in a scan node ie from exprContext->ecxt_scantuple or varOffset = 0
+  llvm::Value* llvm_slot_arg =
+		  irb->CreateLoad(codegen_utils->GetPointerToMember(
+				  llvm_econtext, &ExprContext::ecxt_scantuple));
 
-//  llvm::Value* llvm_econtext =
-//  		  irb->CreateLoad(codegen_utils->GetPointerToMember(
-//  				  llvm_projInfo, &ProjectionInfo::pi_exprContext));
-//  llvm::Value* llvm_varSlotOffsets =
-//  		  irb->CreateLoad(codegen_utils->GetPointerToMember(
-//  				  llvm_projInfo, &ProjectionInfo::pi_varSlotOffsets));
-//  llvm::Value* llvm_varNumbers =
-//  		  irb->CreateLoad(codegen_utils->GetPointerToMember(
-//  				  llvm_projInfo, &ProjectionInfo::pi_varNumbers));
-//  CreateElogMessage(codegen_utils, llvm_elog_wrapper, llvm_fflush_wrapper, "P");
-//  llvm::Value* llvm_slot_PRIVATE_tts_flags =
-//    		  irb->CreateLoad(codegen_utils->GetPointerToMember(
-//    				  llvm_slot, &TupleTableSlot::PRIVATE_tts_flags));
-//  CreateElogMessage(codegen_utils, llvm_elog_wrapper, llvm_fflush_wrapper, "Q");
-//  llvm::Value* llvm_slot_PRIVATE_tts_memtuple =
-//      		  irb->CreateLoad(codegen_utils->GetPointerToMember(
-//      				  llvm_slot, &TupleTableSlot::PRIVATE_tts_memtuple));
+  CreateElogString(codegen_utils, "%s\n", codegen_utils->GetConstant("OK in generated code!"));
+  CreateElogInt(codegen_utils, "slot = %x ", irb->CreatePtrToInt(llvm_slot, codegen_utils->GetType<int>()));
+  CreateElogInt(codegen_utils, "input_slot = %x \n", irb->CreatePtrToInt(llvm_slot_arg, codegen_utils->GetType<int>()));
+
+  irb->CreateCondBr(
+		  irb->CreateICmpEQ(llvm_slot, llvm_slot_arg),
+		  tuple_type_check_block /* true */,
+		  fallback_block /* false */
+		  );
 
   /*
-   * implementing slot_getattr
+   * Tuple Type check
+   * we fall back if we see a virtual tuple or mem tuple, but it's possible to partially handle those cases also
    */
-//  CreateElogMessage(codegen_utils, llvm_elog_wrapper, llvm_fflush_wrapper, "R");
-//
-//  /* (slot->PRIVATE_tts_flags & TTS_VIRTUAL) != 0 */
-//  llvm::Value* llvm_tuple_is_virtual = irb->CreateICmpNE(
-//		  irb->CreateAnd(llvm_slot_PRIVATE_tts_flags, codegen_utils->GetConstant(TTS_VIRTUAL)),
-//		  codegen_utils->GetConstant(0));
-//  CreateElogMessage(codegen_utils, llvm_elog_wrapper, llvm_fflush_wrapper, "S");
-//
-//  /* slot->PRIVATE_tts_memtuple != NULL */
-//  llvm::Value* llvm_tuple_has_memtuple = irb->CreateICmpNE(
-//		  llvm_slot_PRIVATE_tts_memtuple, codegen_utils->GetConstant((MemTuple) NULL));
-//
-//  CreateElogMessage(codegen_utils, llvm_elog_wrapper, llvm_fflush_wrapper, "T");
-//
-//  /* Fallback if tuple has nulls*/
-//   irb->CreateCondBr(
-//		   irb->CreateOr(llvm_tuple_is_virtual, llvm_tuple_has_memtuple),
-//		   fallback_block /*true*/, main_block /*false*/);
+  irb->SetInsertPoint(tuple_type_check_block);
+  llvm::Value* llvm_slot_PRIVATE_tts_flags =
+    		  irb->CreateLoad(codegen_utils->GetPointerToMember(
+    				  llvm_slot, &TupleTableSlot::PRIVATE_tts_flags));
+  llvm::Value* llvm_slot_PRIVATE_tts_memtuple =
+      		  irb->CreateLoad(codegen_utils->GetPointerToMember(
+      				  llvm_slot, &TupleTableSlot::PRIVATE_tts_memtuple));
 
-//  /*
-//   * Main block
-//   */
-//  irb->SetInsertPoint(main_block);
-//  // Go straight to the fallback block
-//  CreateElogMessage(codegen_utils, llvm_elog_wrapper, llvm_fflush_wrapper, "In Main block.");
-//  irb->CreateBr(fallback_block);
+  /* (slot->PRIVATE_tts_flags & TTS_VIRTUAL) != 0 */
+  llvm::Value* llvm_tuple_is_virtual = irb->CreateICmpNE(
+		  irb->CreateAnd(llvm_slot_PRIVATE_tts_flags, codegen_utils->GetConstant(TTS_VIRTUAL)),
+		  codegen_utils->GetConstant(0));
+
+  /* slot->PRIVATE_tts_memtuple != NULL */
+  llvm::Value* llvm_tuple_has_memtuple = irb->CreateICmpNE(
+		  llvm_slot_PRIVATE_tts_memtuple, codegen_utils->GetConstant((MemTuple) NULL));
+
+  /* Fallback if tuple is virtual or memtuple is null */
+   irb->CreateCondBr(
+		   irb->CreateOr(llvm_tuple_is_virtual, llvm_tuple_has_memtuple),
+		   fallback_block /*true*/, main_block /*false*/);
+
+ /*
+   * Main block
+   */
+  irb->SetInsertPoint(main_block);
+  // Go straight to the fallback block
+  CreateElogString(codegen_utils, "%s\n", codegen_utils->GetConstant("In Main block."));
+  irb->CreateCall(llvm__slot_getsomeattrs, { llvm_slot, llvm_max_attr});
+
+  llvm::Value* llvm_slot_PRIVATE_tts_isnull /* bool* */=
+    		  irb->CreateLoad(codegen_utils->GetPointerToMember(
+    				  llvm_slot, &TupleTableSlot::PRIVATE_tts_isnull));
+  llvm::Value* llvm_slot_PRIVATE_tts_values /* Datum* */=
+      		  irb->CreateLoad(codegen_utils->GetPointerToMember(
+      				  llvm_slot, &TupleTableSlot::PRIVATE_tts_values));
+
+  int  *varNumbers = proj_info_->pi_varNumbers;
+  for (int i = list_length(proj_info_->pi_targetlist) - 1; i >= 0; i--)
+  {
+//  	values[i] = slot_getattr(varSlot, varNumbers[i] -1 +1, &(isnull[i]));
+  	//*isnull = slot->PRIVATE_tts_isnull[attnum-1];
+//  	*(&(isnull[i])) = slot->PRIVATE_tts_isnull[ varNumbers[i] - 1];
+//  	values[i] = varSlot->PRIVATE_tts_values[varNumbers[i] -1];
+
+	  llvm::Value* llvm_isnull_from_slot_val =
+			  irb->CreateLoad(irb->CreateInBoundsGEP(llvm_slot_PRIVATE_tts_isnull,
+					  {codegen_utils->GetConstant(varNumbers[i] - 1)}));
+	  llvm::Value* llvm_isnull_ptr =
+			  irb->CreateInBoundsGEP(llvm_isnull_arg, {codegen_utils->GetConstant(i)});
+	  irb->CreateStore(llvm_isnull_from_slot_val, llvm_isnull_ptr);
+	  CreateElogInt(codegen_utils, "isnull = %d", irb->CreateZExt(llvm_isnull_from_slot_val, codegen_utils->GetType<int>()));
+
+  }
+  irb->CreateBr(fallback_block);
 
 
   /*
