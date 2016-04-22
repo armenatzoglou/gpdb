@@ -49,6 +49,7 @@ class ExecVariableListCodegen: public BaseCodegen<ExecVariableListFn> {
   ProjectionInfo* proj_info_;
   TupleTableSlot* slot_;
 
+
   static constexpr char kExecVariableListPrefix[] = "ExecVariableList";
 
   /**

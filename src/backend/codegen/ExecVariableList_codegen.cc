@@ -60,17 +60,11 @@ ExecVariableListCodegen::ExecVariableListCodegen
 		slot_(slot){
 }
 
-static void ElogWrapper(const char* message) {
-  elog(INFO, "%s\n", message);
+static void ElogWrapperString(const char* format, const char* message) {
+  elog(INFO, format, message);
 }
-
-static void llvm_debug_elog(gpcodegen::CodegenUtils* codegen_utils,
-		llvm::Function* llvm_elog_wrapper,
-		const char* log_msg){
-	llvm::Value* llvm_log_msg = codegen_utils->GetConstant(
-		log_msg);
-	codegen_utils->ir_builder()->CreateCall(llvm_elog_wrapper,
-		  { llvm_log_msg });
+static void ElogWrapperInt(const char* format, const int integer) {
+  elog(INFO, format, integer);
 }
 
 int GetMax(int* numbers, int length) {
@@ -83,25 +77,60 @@ int GetMax(int* numbers, int length) {
 	return max;
 }
 
-static void CreateElogMessage(gpcodegen::CodegenUtils* codegen_utils,
-		llvm::Function* llvm_elog_wrapper,
-		llvm::Function* llvm_fflush_wrapper,
-		const char* message){
-	  llvm::Value* llvm_message = codegen_utils->GetConstant(message);
-	  codegen_utils->ir_builder()->CreateCall(llvm_elog_wrapper, { llvm_message });
-	  codegen_utils->ir_builder()->CreateCall(llvm_fflush_wrapper, { codegen_utils->GetConstant((FILE *) NULL) });
+static llvm::Function* llvm_elog_string_wrapper_ = nullptr;
+static llvm::Function* llvm_elog_int_wrapper_ = nullptr;
+static llvm::Function* llvm_fflush_wrapper_ = nullptr;
+
+static void SetUpElog(gpcodegen::CodegenUtils* codegen_utils) {
+	if (nullptr == llvm_elog_string_wrapper_) {
+	  llvm_elog_string_wrapper_ = codegen_utils->RegisterExternalFunction(
+				  ElogWrapperString);
+	  assert(llvm_elog_string_wrapper_ != nullptr);
+	}
+	if (nullptr == llvm_elog_int_wrapper_) {
+	  llvm_elog_int_wrapper_ = codegen_utils->RegisterExternalFunction(
+				  ElogWrapperInt);
+	  assert(llvm_elog_int_wrapper_ != nullptr);
+	}
+	if (nullptr == llvm_fflush_wrapper_) {
+	  llvm_fflush_wrapper_ = codegen_utils->RegisterExternalFunction(
+		  		  fflush);
+	  assert(llvm_fflush_wrapper_ != nullptr);
+	}
 }
+
+static void CreateElogInt(gpcodegen::CodegenUtils* codegen_utils,
+		const char* format,
+		llvm::Value* llvm_int_value){
+	SetUpElog(codegen_utils);
+	llvm::Value* llvm_format = codegen_utils->GetConstant(format);
+	std::vector<llvm::Value*> llvm_args;
+	llvm_args.push_back(llvm_format);
+	llvm_args.push_back(llvm_int_value);
+	codegen_utils->ir_builder()->CreateCall(llvm_elog_int_wrapper_, llvm_args);
+	codegen_utils->ir_builder()->CreateCall(llvm_fflush_wrapper_, { codegen_utils->GetConstant((FILE *) NULL) });
+}
+static void CreateElogString(gpcodegen::CodegenUtils* codegen_utils,
+		const char* format,
+		llvm::Value* llvm_string_value){
+	SetUpElog(codegen_utils);
+	llvm::Value* llvm_format = codegen_utils->GetConstant(format);
+	std::vector<llvm::Value*> llvm_args;
+	llvm_args.push_back(llvm_format);
+	llvm_args.push_back(llvm_string_value);
+	codegen_utils->ir_builder()->CreateCall(llvm_elog_string_wrapper_, llvm_args);
+	codegen_utils->ir_builder()->CreateCall(llvm_fflush_wrapper_, { codegen_utils->GetConstant((FILE *) NULL) });
+}
+
+
+
 
 static std::string slot_str;
 
 bool ExecVariableListCodegen::GenerateExecVariableList(
     gpcodegen::CodegenUtils* codegen_utils) {
 
-  llvm::Function* llvm_elog_wrapper = codegen_utils->RegisterExternalFunction(
-		  ElogWrapper);
-  llvm::Function* llvm_fflush_wrapper = codegen_utils->RegisterExternalFunction(
-  		  fflush);
-  assert(llvm_elog_wrapper != nullptr);
+
 
   COMPILE_ASSERT(sizeof(Datum) == sizeof(int64));
 
@@ -164,7 +193,7 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
    * Entry Block
    */
   irb->SetInsertPoint(entry_block);
-  CreateElogMessage(codegen_utils, llvm_elog_wrapper, llvm_fflush_wrapper, "OK in generated code!");
+  CreateElogString(codegen_utils,"%s\n", codegen_utils->GetConstant("OK in generated code!"));
   irb->CreateBr(fallback_block);
 
 
@@ -221,7 +250,7 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
    * Fallback block
    */
   irb->SetInsertPoint(fallback_block);
-  CreateElogMessage(codegen_utils, llvm_elog_wrapper, llvm_fflush_wrapper, "Falling back to regular ExecVariableList");
+  CreateElogString(codegen_utils, "%s\n", codegen_utils->GetConstant("Falling back to regular ExecVariableList"));
 
   auto regular_func_pointer = GetRegularFuncPointer();
   llvm::Function* llvm_regular_function =
