@@ -810,11 +810,18 @@ ExecBuildProjectionInfo(List *targetList,
 					lastScanVar = Max(lastScanVar, attnum);
 					break;
 			}
+			char	   *slotptr = ((char *) projInfo->pi_exprContext) + varSlotOffsets[resind];
+			TupleTableSlot *varSlot = *((TupleTableSlot **) slotptr);
+			elog(INFO, "FOR_LOOP varSlot = %x", varSlot);
+
+
 		}
 		projInfo->pi_lastInnerVar = lastInnerVar;
 		projInfo->pi_lastOuterVar = lastOuterVar;
 		projInfo->pi_lastScanVar = lastScanVar;
 
+
+		elog(INFO, "Enrolling... with econtext = %x", econtext);
 		// We only want to enroll if a varlist is present, else ExecVariableList doesn't get called anyway
     	enroll_ExecVariableList_codegen(ExecVariableList,
 				&projInfo->ExecVariableList_gen_info.ExecVariableList_fn, projInfo);

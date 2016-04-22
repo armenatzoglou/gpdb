@@ -365,6 +365,7 @@ ExecSetSlotDescriptor(TupleTableSlot *slot,		/* slot to change */
 	 * This will enroll to codegen manager if USE_CODEGEN is enabled
 	 */
 	slot->slot_deform_tuple_gen_info.slot_deform_tuple_fn = slot_deform_tuple;
+	elog(INFO, "Creating slot %x", slot);
 }
 
 /* --------------------------------
