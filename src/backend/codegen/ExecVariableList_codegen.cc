@@ -271,11 +271,17 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
 	  llvm::Value* llvm_isnull_ptr =
 			  irb->CreateInBoundsGEP(llvm_isnull_arg, {codegen_utils->GetConstant(i)});
 	  irb->CreateStore(llvm_isnull_from_slot_val, llvm_isnull_ptr);
+
+	  llvm::Value* llvm_value_from_slot_val =
+			  irb->CreateLoad(irb->CreateInBoundsGEP(llvm_slot_PRIVATE_tts_values,
+					  {codegen_utils->GetConstant(varNumbers[i] - 1)}));
+	  llvm::Value* llvm_values_ptr =
+			  irb->CreateInBoundsGEP(llvm_values_arg, {codegen_utils->GetConstant(i)});
+	  irb->CreateStore(llvm_value_from_slot_val, llvm_values_ptr);
 	  CreateElogInt(codegen_utils, "isnull = %d", irb->CreateZExt(llvm_isnull_from_slot_val, codegen_utils->GetType<int>()));
 
   }
-  irb->CreateBr(fallback_block);
-
+  codegen_utils->ir_builder()->CreateRetVoid();
 
   /*
    * Fallback block
