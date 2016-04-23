@@ -133,6 +133,7 @@ static void CreateElogString(gpcodegen::CodegenUtils* codegen_utils,
 	codegen_utils->ir_builder()->CreateCall(llvm_fflush_wrapper_, { codegen_utils->GetConstant((FILE *) NULL) });
 }
 
+/* void *memset(void *s, int c, size_t n); */
 static void CreateMemset(gpcodegen::CodegenUtils* codegen_utils,
 		llvm::Value* llvm_ptr,
 		llvm::Value* llvm_fill_val,
@@ -364,18 +365,18 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
 				  codegen_utils->GetType<void*>()),
 		  codegen_utils->GetConstant(0),
 		  irb->CreateMul(codegen_utils->GetConstant(sizeof(Datum)),
-				  irb->CreateSub(llvm_max_attr, llvm_attno))
+				  irb->CreateZExtOrTrunc(irb->CreateSub(llvm_max_attr, llvm_attno), codegen_utils->GetType<size_t>()))
 		  );
 
-//  CreateMemset(
-//  		  codegen_utils,
-//  		  irb->CreateBitCast(
-//  				  irb->CreateInBoundsGEP(llvm_slot_PRIVATE_tts_isnull, {llvm_attno}),
-//  				  codegen_utils->GetType<void*>()),
-//  		  codegen_utils->GetConstant((int) true),
-//  		  irb->CreateMul(codegen_utils->GetConstant(sizeof(Datum)),
-//  				  irb->CreateSub(llvm_max_attr, llvm_attno))
-//  		  );
+  CreateMemset(
+  		  codegen_utils,
+  		  irb->CreateBitCast(
+  				  irb->CreateInBoundsGEP(llvm_slot_PRIVATE_tts_isnull, {llvm_attno}),
+  				  codegen_utils->GetType<void*>()),
+  		  codegen_utils->GetConstant((int) true),
+		  irb->CreateMul(codegen_utils->GetConstant(sizeof(Datum)),
+				  irb->CreateZExtOrTrunc(irb->CreateSub(llvm_max_attr, llvm_attno), codegen_utils->GetType<size_t>()))
+  		  );
 
   /* slot->PRIVATE_tts_nvalid = attnum; */
   irb->CreateStore(llvm_max_attr, llvm_slot_PRIVATE_tts_nvalid_ptr);
