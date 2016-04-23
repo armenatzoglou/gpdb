@@ -80,8 +80,9 @@ int GetMax(int* numbers, int length) {
 static llvm::Function* llvm_elog_string_wrapper_ = nullptr;
 static llvm::Function* llvm_elog_int_wrapper_ = nullptr;
 static llvm::Function* llvm_fflush_wrapper_ = nullptr;
+static llvm::Function* llvm_memset_wrapper_ = nullptr;
 
-static void SetUpElog(gpcodegen::CodegenUtils* codegen_utils) {
+static void SetUpExternalFunctions(gpcodegen::CodegenUtils* codegen_utils) {
 	if (nullptr == llvm_elog_string_wrapper_) {
 	  llvm_elog_string_wrapper_ = codegen_utils->RegisterExternalFunction(
 				  ElogWrapperString);
@@ -97,18 +98,23 @@ static void SetUpElog(gpcodegen::CodegenUtils* codegen_utils) {
 		  		  fflush);
 	  assert(llvm_fflush_wrapper_ != nullptr);
 	}
+	if (nullptr == llvm_memset_wrapper_) {
+	  llvm_memset_wrapper_ =
+				codegen_utils->RegisterExternalFunction(memset);
+	  assert(llvm_memset_wrapper_ != nullptr);
+	}
 }
 
-static void TearDownElog(gpcodegen::CodegenUtils* codegen_utils){
+static void TearDownExternalFunctions(gpcodegen::CodegenUtils* codegen_utils){
 	llvm_fflush_wrapper_ = nullptr;
 	llvm_elog_int_wrapper_ = nullptr;
 	llvm_elog_string_wrapper_ = nullptr;
+	llvm_memset_wrapper_ = nullptr;
 }
 
 static void CreateElogInt(gpcodegen::CodegenUtils* codegen_utils,
 		const char* format,
 		llvm::Value* llvm_int_value){
-	SetUpElog(codegen_utils);
 	llvm::Value* llvm_format = codegen_utils->GetConstant(format);
 	std::vector<llvm::Value*> llvm_args;
 	llvm_args.push_back(llvm_format);
@@ -119,7 +125,6 @@ static void CreateElogInt(gpcodegen::CodegenUtils* codegen_utils,
 static void CreateElogString(gpcodegen::CodegenUtils* codegen_utils,
 		const char* format,
 		llvm::Value* llvm_string_value){
-	SetUpElog(codegen_utils);
 	llvm::Value* llvm_format = codegen_utils->GetConstant(format);
 	std::vector<llvm::Value*> llvm_args;
 	llvm_args.push_back(llvm_format);
@@ -128,9 +133,21 @@ static void CreateElogString(gpcodegen::CodegenUtils* codegen_utils,
 	codegen_utils->ir_builder()->CreateCall(llvm_fflush_wrapper_, { codegen_utils->GetConstant((FILE *) NULL) });
 }
 
+static void CreateMemset(gpcodegen::CodegenUtils* codegen_utils,
+		llvm::Value* llvm_ptr,
+		llvm::Value* llvm_fill_val,
+		llvm::Value* llvm_fill_size) {
+
+  // TODO: Some asserts on the types of the input
+  llvm::CallInst* call_llvm_memset = codegen_utils->ir_builder()->CreateCall(
+      llvm_memset_wrapper_, {llvm_ptr, llvm_fill_val, llvm_fill_size});
+}
+
+
 bool ExecVariableListCodegen::GenerateExecVariableList(
     gpcodegen::CodegenUtils* codegen_utils) {
 
+  SetUpExternalFunctions(codegen_utils);
   COMPILE_ASSERT(sizeof(Datum) == sizeof(int64));
 
   /*
@@ -337,6 +354,29 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
 	  irb->CreateStore(llvm_value_from_slot_val, llvm_values_ptr);
 	  CreateElogInt(codegen_utils, "isnull = %d", irb->CreateZExt(llvm_isnull_from_slot_val, codegen_utils->GetType<int>()));
   }
+
+
+  // TODO: we can avoid this
+  CreateMemset(
+		  codegen_utils,
+		  irb->CreateBitCast(
+				  irb->CreateInBoundsGEP(llvm_slot_PRIVATE_tts_values, {llvm_attno}),
+				  codegen_utils->GetType<void*>()),
+		  codegen_utils->GetConstant(0),
+		  irb->CreateMul(codegen_utils->GetConstant(sizeof(Datum)),
+				  irb->CreateSub(llvm_max_attr, llvm_attno))
+		  );
+
+//  CreateMemset(
+//  		  codegen_utils,
+//  		  irb->CreateBitCast(
+//  				  irb->CreateInBoundsGEP(llvm_slot_PRIVATE_tts_isnull, {llvm_attno}),
+//  				  codegen_utils->GetType<void*>()),
+//  		  codegen_utils->GetConstant((int) true),
+//  		  irb->CreateMul(codegen_utils->GetConstant(sizeof(Datum)),
+//  				  irb->CreateSub(llvm_max_attr, llvm_attno))
+//  		  );
+
   /* slot->PRIVATE_tts_nvalid = attnum; */
   irb->CreateStore(llvm_max_attr, llvm_slot_PRIVATE_tts_nvalid_ptr);
 
@@ -381,7 +421,7 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
   }
 
 
-  TearDownElog(codegen_utils);
+  TearDownExternalFunctions(codegen_utils);
   return true;
 }
 
