@@ -192,6 +192,9 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
   /* BasicBlock of function entry. */
   llvm::BasicBlock* entry_block = codegen_utils->CreateBasicBlock(
       "entry", ExecVariableList_func);
+  /* BasicBlock for checking correct slot */
+  llvm::BasicBlock* slot_check_block = codegen_utils->CreateBasicBlock(
+      "slot_check", ExecVariableList_func);
   /* BasicBlock for checking tuple type. */
   llvm::BasicBlock* tuple_type_check_block = codegen_utils->CreateBasicBlock(
       "tuple_type_check", ExecVariableList_func);
@@ -224,6 +227,10 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
    * Entry Block
    */
   irb->SetInsertPoint(entry_block);
+  irb->CreateBr(slot_check_block);
+
+
+  irb->SetInsertPoint(slot_check_block);
   llvm::Value* llvm_econtext =
   		  irb->CreateLoad(codegen_utils->GetPointerToMember(
   				  llvm_projInfo_arg, &ProjectionInfo::pi_exprContext));
@@ -532,7 +539,14 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
    * Fallback block
    */
   irb->SetInsertPoint(fallback_block);
-  CreateElogString(codegen_utils, "%s\n", codegen_utils->GetConstant("Falling back to regular ExecVariableList"));
+  llvm::PHINode* llvm_error = irb->CreatePHI(codegen_utils->GetType<int>(), 10);
+  llvm_error->addIncoming(codegen_utils->GetConstant(0), slot_check_block);
+  llvm_error->addIncoming(codegen_utils->GetConstant(1), tuple_type_check_block);
+  llvm_error->addIncoming(codegen_utils->GetConstant(2), heap_tuple_check_block);
+  llvm_error->addIncoming(codegen_utils->GetConstant(3), null_check_block);
+
+  CreateElogInt(codegen_utils, " >> Falling back to regular ExecVariableList: ecode = %d\n", llvm_error);
+
 
   auto regular_func_pointer = GetRegularFuncPointer();
   llvm::Function* llvm_regular_function =
