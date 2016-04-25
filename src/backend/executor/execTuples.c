@@ -335,6 +335,7 @@ ExecAllocTableSlot(TupleTable table)
  * --------------------------------
  */
 
+extern void slot_deform_tuple(TupleTableSlot* slot, int natts);
 void
 ExecSetSlotDescriptor(TupleTableSlot *slot,		/* slot to change */
 					  TupleDesc tupdesc)		/* new tuple descriptor */

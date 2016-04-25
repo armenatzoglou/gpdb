@@ -48,6 +48,7 @@ typedef void (*ExecVariableListFn) (struct ProjectionInfo *projInfo, Datum *valu
 
 #else
 
+
 /*
  * @brief Life span of Code generator instance
  *
@@ -69,15 +70,14 @@ typedef enum CodegenFuncLifespan
 
 #ifdef __cplusplus
 extern "C" {
+
+#endif
 /*
  * Forward extern declaration of slot deform tuple if code gen is enabled
  */
 extern void slot_deform_tuple(struct TupleTableSlot *slot, int natts);
 
 extern void ExecVariableList(struct ProjectionInfo *projInfo, Datum *values, bool *isnull);
-
-#endif
-
 /*
  * Do one-time global initialization of LLVM library. Returns 1
  * on success, 0 on error.

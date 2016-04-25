@@ -281,6 +281,7 @@ tlist_matches_tupdesc(PlanState *ps, List *tlist, Index varno, TupleDesc tupdesc
 	return true;
 }
 
+extern void ExecVariableList(ProjectionInfo *projInfo, Datum *values, bool *isnull);
 /*
  * InitScanStateRelationDetails
  *   Opens a relation and sets various relation specific ScanState fields.
