@@ -157,12 +157,10 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
    */
   if ( NULL == proj_info_->pi_varSlotOffsets ) {
 	// Being in this state is ridiculous - we fucked up!
-    elog(INFO, "Cannot codegen ExecVariableList because varSlotOffsets are null");
     return false;
   }
   for (int i = list_length(proj_info_->pi_targetlist) - 1; i > 0; i--){
 	  if (proj_info_->pi_varSlotOffsets[i] != proj_info_->pi_varSlotOffsets[i-1]){
-		  elog(INFO, "Cannot codegen ExecVariableList because multiple slots to deform.");
 		  return false;
 	  }
   }
@@ -173,10 +171,8 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
   /* System attribute */
   if(max_attr <= 0)
   {
-	  elog(INFO, "Cannot generate code for ExecVariableList because max_attr is negative (i.e., system attribute).");
 	  return false;
   }else if (max_attr > slot_->tts_tupleDescriptor->natts) {
-	  elog(INFO, "Cannot generate code for ExecVariableList because max_attr is greater than natts.");
 	  return false;
   }
 
@@ -185,7 +181,6 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
 		  CreateFunction<ExecVariableListFn>(
 				  GetUniqueFuncName());
 
-  //elog(INFO, "proj_info_ = %x, slot = %x, pi_slot = %x", proj_info_, slot, proj_info_->pi_slot);
 
   auto irb = codegen_utils->ir_builder();
 
@@ -244,10 +239,6 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
   llvm::Value* llvm_slot_arg =
 		  irb->CreateLoad(codegen_utils->GetPointerToMember(
 				  llvm_econtext, &ExprContext::ecxt_scantuple));
-
-  //CreateElogString(codegen_utils, "%s\n", codegen_utils->GetConstant("OK in generated code!"));
-  CreateElogInt(codegen_utils, "slot = %x ", irb->CreatePtrToInt(llvm_slot, codegen_utils->GetType<int>()));
-  CreateElogInt(codegen_utils, "input_slot = %x \n", irb->CreatePtrToInt(llvm_slot_arg, codegen_utils->GetType<int>()));
 
   irb->CreateCondBr(
 		  irb->CreateICmpEQ(llvm_slot, llvm_slot_arg),
@@ -363,7 +354,6 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
    * Finally we try to codegen slot_deform_tuple
    */
   irb->SetInsertPoint(main_block);
-  CreateElogString(codegen_utils, "%s\n", codegen_utils->GetConstant("In Main block."));
 
   /* Find the start of input data byte array */
   // tp - ptr to tuple data
@@ -491,7 +481,6 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
 	  llvm::Value* llvm_values_ptr =
 			  irb->CreateInBoundsGEP(llvm_values_arg, {codegen_utils->GetConstant(i)});
 	  irb->CreateStore(llvm_value_from_slot_val, llvm_values_ptr);
-	  CreateElogInt(codegen_utils, "isnull = %d", irb->CreateZExt(llvm_isnull_from_slot_val, codegen_utils->GetType<int>()));
   }
 
 
@@ -544,8 +533,6 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
   llvm_error->addIncoming(codegen_utils->GetConstant(1), tuple_type_check_block);
   llvm_error->addIncoming(codegen_utils->GetConstant(2), heap_tuple_check_block);
   llvm_error->addIncoming(codegen_utils->GetConstant(3), null_check_block);
-
-  CreateElogInt(codegen_utils, " >> Falling back to regular ExecVariableList: ecode = %d\n", llvm_error);
 
 
   auto regular_func_pointer = GetRegularFuncPointer();

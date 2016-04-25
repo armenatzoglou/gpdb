@@ -76,16 +76,6 @@ unsigned int CodegenManager::PrepareGeneratedFunctions() {
       gpcodegen::CodegenUtils::OptimizationLevel::kDefault, true, error_msg);
 
   unsigned int success_count = 0;
-  if (compilation_status)
-  {
-	  elog(INFO, "%s CodegenManager::PrepareGeneratedFunctions compilation_status %d", module_name_.c_str(),
-	  			compilation_status);
-  }
-  else
-  {
-	elog(INFO, "%s CodegenManager::PrepareGeneratedFunctions compilation_status %d : error = %s ", module_name_.c_str(),
-			compilation_status, error_msg.c_str());
-  }
 
   if (!compilation_status) {
     return success_count;

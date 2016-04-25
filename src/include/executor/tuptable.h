@@ -338,7 +338,6 @@ static inline Datum slot_getattr(TupleTableSlot *slot, int attnum, bool *isnull)
 	/* fast path for virtual tuple */
 	if(TupHasVirtualTuple(slot) && slot->PRIVATE_tts_nvalid >= attnum)
 	{
-		elog(INFO, ". VirtualTuple.");
 		*isnull = slot->PRIVATE_tts_isnull[attnum-1];
 		return slot->PRIVATE_tts_values[attnum-1];
 	}
@@ -347,14 +346,12 @@ static inline Datum slot_getattr(TupleTableSlot *slot, int attnum, bool *isnull)
 	if(TupHasMemTuple(slot))
 	{
 		Assert(slot->tts_mt_bind);
-		elog(INFO, ". Memtuple.");
 		return memtuple_getattr(slot->PRIVATE_tts_memtuple, slot->tts_mt_bind, attnum, isnull);
 	}
 
 	/* Slow: heap tuple */
 	Assert(TupHasHeapTuple(slot));
 
-	elog(INFO, ". Not memtuple or virtuple.");
 
 	_slot_getsomeattrs(slot, attnum);
 	Assert(TupHasVirtualTuple(slot) && slot->PRIVATE_tts_nvalid >= attnum);

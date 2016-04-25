@@ -5885,8 +5885,6 @@ ExecVariableList(ProjectionInfo *projInfo,
 		TupleTableSlot *varSlot = *((TupleTableSlot **) slotptr);
 		int			varNumber = varNumbers[i] - 1;
 
-		elog(INFO, "ExecVariableList: projInfo = %x, slot = %x, i = %d, attrnum = %d", projInfo, varSlot, i, varNumber+1);
-
 		values[i] = slot_getattr(varSlot, varNumber+1, &(isnull[i])); 
 	}
 }
@@ -5936,7 +5934,6 @@ ExecProject(ProjectionInfo *projInfo, ExprDoneCond *isDone)
 		if (isDone)
 			*isDone = ExprSingleResult;
 
-		elog(INFO, "Calling ExecVariableList");
 
 		call_ExecVariableList(projInfo,
 						 slot_get_values(slot),
@@ -5945,7 +5942,6 @@ ExecProject(ProjectionInfo *projInfo, ExprDoneCond *isDone)
 	}
 	else
 	{
-		elog(INFO, "Calling ExecTargetList");
 		if (ExecTargetList(projInfo->pi_targetlist,
 						   projInfo->pi_exprContext,
 						   slot_get_values(slot),

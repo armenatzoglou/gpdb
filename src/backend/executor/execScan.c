@@ -305,7 +305,6 @@ InitScanStateRelationDetails(ScanState *scanState, Plan *plan, EState *estate)
 
 	ProjectionInfo *projInfo = scanState->ps.ps_ProjInfo;
 	if (NULL != projInfo && projInfo->pi_isVarList){
-		elog(INFO, "Enrolling... ");
 		enroll_ExecVariableList_codegen(ExecVariableList,
 				&projInfo->ExecVariableList_gen_info.ExecVariableList_fn, projInfo, scanState->ss_ScanTupleSlot);
 	}
