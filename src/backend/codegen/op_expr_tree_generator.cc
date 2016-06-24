@@ -17,6 +17,7 @@
 #include "llvm/IR/Value.h"
 
 extern "C" {
+#include "c.h"
 #include "postgres.h"  // NOLINT(build/include)
 #include "utils/elog.h"
 #include "nodes/execnodes.h"
@@ -49,6 +50,12 @@ void OpExprTreeGenerator::InitializeSupportedFunction() {
           177,
           "int4pl",
           &PGArithFuncGenerator<int32_t, int32_t, int32_t>::AddWithOverflow));
+
+  supported_function_[218] = std::unique_ptr<PGFuncGeneratorInterface>(
+      new PGGenericFuncGenerator<float8, float8>(
+          218, 
+	  "float8pl", 
+	  &PGArithFuncGenerator<float8, float8, int64_t>::AddWithOverflow));
 
   supported_function_[181] = std::unique_ptr<PGFuncGeneratorInterface>(
       new PGGenericFuncGenerator<int32_t, int32_t>(
