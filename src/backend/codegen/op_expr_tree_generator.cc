@@ -14,6 +14,7 @@
 #include "codegen/op_expr_tree_generator.h"
 
 #include "include/codegen/pg_arith_func_generator.h"
+#include "include/codegen/pg_date_func_generator.h"
 #include "llvm/IR/Value.h"
 
 extern "C" {
@@ -55,13 +56,17 @@ void OpExprTreeGenerator::InitializeSupportedFunction() {
   supported_function_[141] = std::unique_ptr<PGFuncGeneratorInterface>(
       new PGGenericFuncGenerator<int32_t, int32_t>(
           141, "int4mul", &PGArithFuncGenerator<int32_t, int32_t, int32_t>::MulWithOverflow));
+
+  supported_function_[2339] = std::unique_ptr<PGFuncGeneratorInterface>(
+      new PGGenericFuncGenerator<int32_t, int64_t>(
+          2339, "date_le_timestamp", &PGDateFuncGenerator::DateLETimestamp));
 }
 
 OpExprTreeGenerator::OpExprTreeGenerator(
     ExprState* expr_state,
     std::vector<std::unique_ptr<ExprTreeGenerator>>& arguments) :
-        arguments_(std::move(arguments)),
-        ExprTreeGenerator(expr_state, ExprTreeNodeType::kOperator) {
+            arguments_(std::move(arguments)),
+            ExprTreeGenerator(expr_state, ExprTreeNodeType::kOperator) {
 }
 
 bool OpExprTreeGenerator::VerifyAndCreateExprTree(
@@ -100,8 +105,8 @@ bool OpExprTreeGenerator::VerifyAndCreateExprTree(
     assert(nullptr != argstate);
     std::unique_ptr<ExprTreeGenerator> arg(nullptr);
     supported_tree &= ExprTreeGenerator::VerifyAndCreateExprTree(argstate,
-                                                                econtext,
-                                                                arg);
+                                                                 econtext,
+                                                                 arg);
     if (!supported_tree) {
       break;
     }
@@ -126,9 +131,9 @@ bool OpExprTreeGenerator::GenerateCode(CodegenUtils* codegen_utils,
   CodeGenFuncMap::iterator itr =  supported_function_.find(op_expr->opfuncid);
 
   if (itr == supported_function_.end()) {
-      // Operators are stored in pg_proc table. See postgres.bki for more details.
-      elog(WARNING, "Unsupported operator %d.", op_expr->opfuncid);
-      return false;
+    // Operators are stored in pg_proc table. See postgres.bki for more details.
+    elog(WARNING, "Unsupported operator %d.", op_expr->opfuncid);
+    return false;
   }
 
   if (arguments_.size() != itr->second->GetTotalArgCount()) {
