@@ -294,9 +294,12 @@ class CodegenUtils {
       return ir_builder()->CreateZExt(value, llvm_dest_type);
     } else if (src_size > dest_size) {
       return ir_builder()->CreateTrunc(value, llvm_dest_type);
-    } else if (llvm_src_type->getTypeID() != llvm_dest_type->getTypeID()) {
-      return ir_builder()->CreateBitCast(value, llvm_dest_type);
     }
+    // TODO: Fix function to support float
+    /*
+     else if (llvm_src_type->getTypeID() != llvm_dest_type->getTypeID()) {
+      return ir_builder()->CreateBitCast(value, llvm_dest_type);
+    }*/
     return value;
   }
 
@@ -1345,12 +1348,10 @@ class ArithOpMaker<double> {
                                          llvm::Value* arg0,
                                          llvm::Value* arg1) {
      Checker(arg0, arg1);
-     llvm::Value* casted_arg0 = generator->CreateCast<double>(arg0);
-     llvm::Value* casted_arg1 = generator->CreateCast<double>(arg1);
-     return generator->CreateIntrinsicInstrCall(llvm::Intrinsic::sadd_with_overflow,
-                                     generator->GetType<double>(),
-                                     casted_arg0,
-                                     casted_arg1);
+     llvm::Value* casted_arg0 = generator->ir_builder()->CreateSIToFP(arg0, generator->GetType<double>());
+     llvm::Value* casted_arg1 = generator->ir_builder()->CreateSIToFP(arg1, generator->GetType<double>());
+
+     return generator->ir_builder()->CreateFAdd(casted_arg0, casted_arg1);
    }
 
    static llvm::Value* CreateSubOverflow(CodegenUtils* generator,
@@ -1383,8 +1384,8 @@ class ArithOpMaker<double> {
                        llvm::Value* arg1) {
      assert(nullptr != arg0 && nullptr != arg0->getType());
      assert(nullptr != arg1 && nullptr != arg1->getType());
-     assert(arg0->getType()->isFloatingPointTy());
-     assert(arg1->getType()->isFloatingPointTy());
+//     assert(arg0->getType()->isFloatingPointTy());
+//     assert(arg1->getType()->isFloatingPointTy());
    }
 };
 
