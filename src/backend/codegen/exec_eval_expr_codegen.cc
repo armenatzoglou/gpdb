@@ -115,6 +115,13 @@ bool ExecEvalExprCodegen::GenerateExecEvalExpr(
   }
 
   llvm::Value* llvm_ret_value = codegen_utils->CreateCast<int64_t>(value);
+
+//  llvm::AllocaInst* llvm_double_ptr = irb->CreateAlloca(codegen_utils->GetType<double>());
+//  llvm_double_ptr->setAlignment(sizeof(double));
+//  irb->CreateAlignedStore(value, llvm_double_ptr, sizeof(double));
+//  llvm::Value* llvm_int_ptr = irb->CreateBitCast(llvm_double_ptr, codegen_utils->GetType<int64_t*>());
+//  llvm::Value* llvm_ret_value = irb->CreateAlignedLoad(llvm_int_ptr, sizeof(double));
+//  codegen_utils->CreateElog(INFO, "value=%lf, llvm_ret_value=%ld", value, llvm_ret_value);
   irb->CreateRet(llvm_ret_value);
 
   irb->SetInsertPoint(llvm_error_block);

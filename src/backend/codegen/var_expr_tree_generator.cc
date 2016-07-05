@@ -89,5 +89,16 @@ bool VarExprTreeGenerator::GenerateCode(CodegenUtils* codegen_utils,
           llvm_slot,
           llvm_variable_varattno,
           llvm_isnull_arg /* TODO: Fix isNull */ });
+
+  codegen_utils->CreateElog(INFO, "VarExprTreeGenerator::GenerateCode (ld): arg = %ld", *llvm_out_value);
+
+  llvm::Value* llvm_out_value_float_8 = codegen_utils->ir_builder()->CreateSIToFP(*llvm_out_value, codegen_utils->GetType<double>());
+
+  codegen_utils->CreateElog(INFO, "VarExprTreeGenerator::GenerateCode (lf): arg = %lf", llvm_out_value_float_8);
+
+  llvm::Value* llvm_out_value_bitcast = codegen_utils->ir_builder()->CreateBitCast(*llvm_out_value, codegen_utils->GetType<double>());
+
+  codegen_utils->CreateElog(INFO, "VarExprTreeGenerator::GenerateCode (bc): arg = %lf", llvm_out_value_bitcast);
+
   return true;
 }

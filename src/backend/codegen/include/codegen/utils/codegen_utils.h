@@ -44,6 +44,11 @@
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/Value.h"
 
+extern "C" {
+#include "utils/elog.h"
+}
+
+
 namespace gpcodegen {
 
 // Forward declaration of helper class for friending purposes.
@@ -64,15 +69,15 @@ class CodegenUtils {
  public:
   enum class OptimizationLevel : unsigned {
     kNone = 0,   // -O0
-    kLess,       // -O1
-    kDefault,    // -O2
-    kAggressive  // -O3
+        kLess,       // -O1
+        kDefault,    // -O2
+        kAggressive  // -O3
   };
 
   enum class SizeLevel : unsigned {
     kNormal = 0,  // Default
-    kSmall,       // -Os
-    kTiny         // -Oz
+        kSmall,       // -Os
+        kTiny         // -Oz
   };
 
   /**
@@ -84,6 +89,68 @@ class CodegenUtils {
   explicit CodegenUtils(llvm::StringRef module_name);
 
   virtual ~CodegenUtils() {
+  }
+
+
+  /*
+   * @brief Create LLVM instructions to call elog_start() and elog_finish().
+   *
+   * @warning This method does not create instructions for any sort of exception
+   *          handling. In the case that elog throws an error, the code with jump
+   *          straight out of the compiled module back to the last location in GPDB
+   *          that setjump was called.
+   *
+   * @param llvm_elevel llvm::Value pointer to an integer representing the error level
+   * @param llvm_fmt    llvm::Value pointer to the format string
+   * @tparam args       llvm::Value pointers to arguments to elog()
+   */
+  template<typename... V>
+  void CreateElog(
+      llvm::Value* llvm_elevel,
+      llvm::Value* llvm_fmt,
+      const V ... args ) {
+    assert(NULL != llvm_elevel);
+    assert(NULL != llvm_fmt);
+
+    llvm::Function* llvm_elog_start =
+        GetOrRegisterExternalFunction(elog_start);
+    llvm::Function* llvm_elog_finish =
+        GetOrRegisterExternalFunction(elog_finish);
+
+    ir_builder()->CreateCall(
+        llvm_elog_start, {
+            GetConstant(""),   // Filename
+            GetConstant(0),    // line number
+            GetConstant("")    // function name
+    });
+    ir_builder()->CreateCall(
+        llvm_elog_finish, {
+            llvm_elevel,
+            llvm_fmt,
+            args...
+    });
+  }
+
+  /*
+   * @brief Create LLVM instructions to call elog_start() and elog_finish().
+   *        A convenient alternative that automatically converts an integer elevel and
+   *        format string to LLVM constants.
+   *
+   * @warning This method does not create instructions for any sort of exception
+   *          handling. In the case that elog throws an error, the code with jump
+   *          straight out of the compiled module back to the last location in GPDB
+   *          that setjump was called.
+   *
+   * @param elevel Integer representing the error level
+   * @param fmt    Format string
+   * @tparam args  llvm::Value pointers to arguments to elog()
+   */
+  template<typename... V>
+  void CreateElog(
+      int elevel,
+      const char* fmt,
+      const V ... args ) {
+    CreateElog(GetConstant(elevel), GetConstant(fmt), args...);
   }
 
   /**
@@ -247,7 +314,7 @@ class CodegenUtils {
       const llvm::Twine& name,
       const bool is_var_arg = false,
       const llvm::GlobalValue::LinkageTypes linkage
-          = llvm::GlobalValue::ExternalLinkage);
+      = llvm::GlobalValue::ExternalLinkage);
 
   /**
    * @brief Create a new BasicBlock inside a Function in this CodegenUtils's
@@ -295,11 +362,9 @@ class CodegenUtils {
     } else if (src_size > dest_size) {
       return ir_builder()->CreateTrunc(value, llvm_dest_type);
     }
-    // TODO: Fix function to support float
-    /*
-     else if (llvm_src_type->getTypeID() != llvm_dest_type->getTypeID()) {
+    else if (llvm_src_type->getTypeID() != llvm_dest_type->getTypeID()) {
       return ir_builder()->CreateBitCast(value, llvm_dest_type);
-    }*/
+    }
     return value;
   }
 
@@ -378,7 +443,7 @@ class CodegenUtils {
     std::tie(it, key_absent) = external_functions_.emplace(
         reinterpret_cast<std::uint64_t>(external_function),
         name.empty() ? GenerateExternalFunctionName()
-                     : name);
+            : name);
 
     if (!key_absent) {
       return module()->getFunction(it->second);
@@ -470,14 +535,14 @@ class CodegenUtils {
 
 
   /**
-    * @brief Generate the commonly used "fallback case" that generates a call to
-    * the regular_function passing all parameters from generated_function.
-    *
-    * @tparam FuncType FunctionType. e.g ReturnType (*)(ArgumenTypes)
-    * @param regular_function     LLVM Function pointer to the regular fallback function
-    * @param generated_function   LLVM Function pointer to the function being generated
-    *
-    **/
+   * @brief Generate the commonly used "fallback case" that generates a call to
+   * the regular_function passing all parameters from generated_function.
+   *
+   * @tparam FuncType FunctionType. e.g ReturnType (*)(ArgumenTypes)
+   * @param regular_function     LLVM Function pointer to the regular fallback function
+   * @param generated_function   LLVM Function pointer to the function being generated
+   *
+   **/
   template<typename FunctionType>
   void CreateFallback(llvm::Function* regular_function,
                       llvm::Function* generated_function);
@@ -519,14 +584,14 @@ class CodegenUtils {
       const llvm::Twine& name,
       const bool is_var_arg = false,
       const llvm::GlobalValue::LinkageTypes linkage
-          = llvm::GlobalValue::ExternalLinkage);
+      = llvm::GlobalValue::ExternalLinkage);
 
   // Used internall when GetFunctionPointer is called. Given the ReturnType
   // and ArgumentTypes this will get a pointer to the compiled machine-code
   // version of a function generated by this CodegenUtils.
   template <typename ReturnType, typename... ArgumentTypes>
   auto GetFunctionPointerImpl(const std::string& function_name)
-      -> ReturnType (*)(ArgumentTypes...);
+  -> ReturnType (*)(ArgumentTypes...);
 
   // Used internally when GetConstant() is called with a pointer type. Creates a
   // new GlobalVariable with external linkage in '*module_' and remembers its
@@ -568,8 +633,8 @@ class CodegenUtils {
   // 'MemberType' to '*cast_type' at the penultimate level of recursion before
   // calling the base version above.
   template <typename StructType,
-            typename MemberType,
-            typename... TailPointerToMemberTypes>
+  typename MemberType,
+  typename... TailPointerToMemberTypes>
   llvm::Value* GetPointerToMemberImpl(
       llvm::Value* base_ptr,
       llvm::Type* cast_type,
@@ -606,7 +671,7 @@ class CodegenUtils {
   // AddExternalGlobalVariable(). PrepareForExecution() adds a mapping for each
   // such GlobalVariable to '*engine_' after creating it.
   std::vector<std::pair<const std::string, const std::uint64_t>>
-      external_global_variables_;
+  external_global_variables_;
 
   // Counters for external variables/functions registered in this CodegenUtils.
   // Used by GenerateExternalVariableName() and GenerateExternalFunctionName(),
@@ -668,8 +733,8 @@ class TypeMaker<void> {
 // Specialization for bool (treated as a 1-bit integer in LLVM IR).
 template <typename BoolType>
 class TypeMaker<
-    BoolType,
-    typename std::enable_if<is_bool<BoolType>::value>::type> {
+BoolType,
+typename std::enable_if<is_bool<BoolType>::value>::type> {
  public:
   static llvm::Type* Get(llvm::LLVMContext* context) {
     return llvm::Type::getInt1Ty(*context);
@@ -683,10 +748,10 @@ class TypeMaker<
 // Specialization for 32-bit float.
 template <typename FloatType>
 class TypeMaker<
-    FloatType,
-    typename std::enable_if<std::is_same<
-        float,
-        typename std::remove_cv<FloatType>::type>::value>::type> {
+FloatType,
+typename std::enable_if<std::is_same<
+float,
+typename std::remove_cv<FloatType>::type>::value>::type> {
  public:
   static llvm::Type* Get(llvm::LLVMContext* context) {
     return llvm::Type::getFloatTy(*context);
@@ -700,10 +765,10 @@ class TypeMaker<
 // Specialization for 64-bit double.
 template <typename DoubleType>
 class TypeMaker<
-    DoubleType,
-    typename std::enable_if<std::is_same<
-        double,
-        typename std::remove_cv<DoubleType>::type>::value>::type> {
+DoubleType,
+typename std::enable_if<std::is_same<
+double,
+typename std::remove_cv<DoubleType>::type>::value>::type> {
  public:
   static llvm::Type* Get(llvm::LLVMContext* context) {
     return llvm::Type::getDoubleTy(*context);
@@ -717,9 +782,9 @@ class TypeMaker<
 // Partial specialization for integer types other than bool.
 template <typename IntType>
 class TypeMaker<
-    IntType,
-    typename std::enable_if<std::is_integral<IntType>::value
-                            && !is_bool<IntType>::value>::type> {
+IntType,
+typename std::enable_if<std::is_integral<IntType>::value
+&& !is_bool<IntType>::value>::type> {
  public:
   static llvm::Type* Get(llvm::LLVMContext* context) {
     return llvm::Type::getIntNTy(*context, sizeof(IntType) << 3);
@@ -734,8 +799,8 @@ class TypeMaker<
 // integer representation.
 template <typename EnumType>
 class TypeMaker<
-    EnumType,
-    typename std::enable_if<std::is_enum<EnumType>::value>::type> {
+EnumType,
+typename std::enable_if<std::is_enum<EnumType>::value>::type> {
  public:
   static llvm::Type* Get(llvm::LLVMContext* context) {
     return TypeMaker<typename std::underlying_type<EnumType>::type>::Get(
@@ -750,12 +815,12 @@ class TypeMaker<
 // Partial specialization for pointers to non-class, non-void types.
 template <typename PtrType>
 class TypeMaker<
-    PtrType,
-    typename std::enable_if<
-        std::is_pointer<PtrType>::value
-        && !std::is_class<typename std::remove_pointer<PtrType>::type>::value
-        && !std::is_void<typename std::remove_pointer<PtrType>::type>::value>
-            ::type> {
+PtrType,
+typename std::enable_if<
+std::is_pointer<PtrType>::value
+&& !std::is_class<typename std::remove_pointer<PtrType>::type>::value
+&& !std::is_void<typename std::remove_pointer<PtrType>::type>::value>
+::type> {
  public:
   static llvm::Type* Get(llvm::LLVMContext* context) {
     return TypeMaker<typename std::remove_pointer<PtrType>::type>::Get(context)
@@ -764,7 +829,7 @@ class TypeMaker<
 
   static AnnotatedType GetAnnotated(llvm::LLVMContext* context) {
     return TypeMaker<typename std::remove_pointer<PtrType>::type>
-        ::GetAnnotated(context).template AddPointer<PtrType>();
+    ::GetAnnotated(context).template AddPointer<PtrType>();
   }
 };
 
@@ -772,11 +837,11 @@ class TypeMaker<
 // converted to untyped pointers (i8* in LLVM, equivalent to void* in C++).
 template <typename ClassPtrType>
 class TypeMaker<
-    ClassPtrType,
-    typename std::enable_if<
-        std::is_pointer<ClassPtrType>::value
-        && std::is_class<
-            typename std::remove_pointer<ClassPtrType>::type>::value>::type> {
+ClassPtrType,
+typename std::enable_if<
+std::is_pointer<ClassPtrType>::value
+&& std::is_class<
+typename std::remove_pointer<ClassPtrType>::type>::value>::type> {
  public:
   static llvm::Type* Get(llvm::LLVMContext* context) {
     return llvm::Type::getInt8PtrTy(*context);
@@ -793,11 +858,11 @@ class TypeMaker<
 // volatile qualified versions of void*.
 template <typename VoidPtrType>
 class TypeMaker<
-    VoidPtrType,
-    typename std::enable_if<
-        std::is_pointer<VoidPtrType>::value
-        && std::is_void<
-            typename std::remove_pointer<VoidPtrType>::type>::value>::type> {
+VoidPtrType,
+typename std::enable_if<
+std::is_pointer<VoidPtrType>::value
+&& std::is_void<
+typename std::remove_pointer<VoidPtrType>::type>::value>::type> {
  public:
   static llvm::Type* Get(llvm::LLVMContext* context) {
     return llvm::Type::getInt8PtrTy(*context);
@@ -829,7 +894,7 @@ class TypeMaker<ArrayElementType[N]> {
  public:
   static llvm::Type* Get(llvm::LLVMContext* context) {
     llvm::Type* unit_type =
-      codegen_utils_detail::TypeMaker<ArrayElementType>::Get(context);
+        codegen_utils_detail::TypeMaker<ArrayElementType>::Get(context);
     return llvm::ArrayType::get(unit_type, N);
   }
 };
@@ -934,10 +999,10 @@ class ConstantMaker {
 // Partial specialization for unsigned integer types (including bool).
 template <typename UnsignedIntType>
 class ConstantMaker<
-    UnsignedIntType,
-    typename std::enable_if<
-        std::is_integral<UnsignedIntType>::value
-        && std::is_unsigned<UnsignedIntType>::value>::type> {
+UnsignedIntType,
+typename std::enable_if<
+std::is_integral<UnsignedIntType>::value
+&& std::is_unsigned<UnsignedIntType>::value>::type> {
  public:
   static_assert(sizeof(UnsignedIntType) <= sizeof(std::uint64_t),
                 "Unable to make an integer constant wider than 64 bits.");
@@ -952,10 +1017,10 @@ class ConstantMaker<
 // Partial specialization for signed integer types.
 template <typename SignedIntType>
 class ConstantMaker<
-    SignedIntType,
-    typename std::enable_if<
-        std::is_integral<SignedIntType>::value
-        && std::is_signed<SignedIntType>::value>::type> {
+SignedIntType,
+typename std::enable_if<
+std::is_integral<SignedIntType>::value
+&& std::is_signed<SignedIntType>::value>::type> {
  public:
   static_assert(sizeof(SignedIntType) <= sizeof(std::int64_t),
                 "Unable to make an integer constant wider than 64 bits.");
@@ -970,8 +1035,8 @@ class ConstantMaker<
 // Partial specialization for enums (mapped to the underlying integer type).
 template <typename EnumType>
 class ConstantMaker<
-    EnumType,
-    typename std::enable_if<std::is_enum<EnumType>::value>::type> {
+EnumType,
+typename std::enable_if<std::is_enum<EnumType>::value>::type> {
  public:
   static llvm::Constant* Get(const EnumType constant_value,
                              CodegenUtils* generator) {
@@ -1028,7 +1093,7 @@ class ConstantMaker<PointedType*> {
 template <typename CppType>
 llvm::Constant* CodegenUtils::GetConstant(const CppType constant_value) {
   return codegen_utils_detail::ConstantMaker<CppType>::Get(constant_value,
-                                                            this);
+                                                           this);
 }
 
 // ----------------------------------------------------------------------------
@@ -1036,8 +1101,8 @@ llvm::Constant* CodegenUtils::GetConstant(const CppType constant_value) {
 // CodegenUtils::GetPointerToMemberImpl().
 
 template <typename StructType,
-          typename MemberType,
-          typename... TailPointerToMemberTypes>
+typename MemberType,
+typename... TailPointerToMemberTypes>
 llvm::Value* CodegenUtils::GetPointerToMemberImpl(
     llvm::Value* base_ptr,
     llvm::Type* cast_type,
@@ -1051,8 +1116,8 @@ llvm::Value* CodegenUtils::GetPointerToMemberImpl(
   // Calculate the offset (in bytes) of the member denoted by
   // '*pointer_to_member' inside StructType.
   const std::size_t member_offset
-      = reinterpret_cast<std::size_t>(
-          &(static_cast<const StructType*>(0)->*pointer_to_member));
+  = reinterpret_cast<std::size_t>(
+      &(static_cast<const StructType*>(0)->*pointer_to_member));
 
   // If we have reached the end of pointer-to-member arguments, it is time to
   // determine the member type to cast the returned pointer to.
@@ -1073,11 +1138,11 @@ llvm::Value* CodegenUtils::GetPointerToMemberImpl(
 template <typename ReturnType, typename... ArgumentTypes>
 void CodegenUtils::RecordNamedExternalFunction(const std::string& name) {
   NamedExternalFunction named_external_fn{name,
-                                          GetAnnotatedType<ReturnType>(),
-                                          {}};
+    GetAnnotatedType<ReturnType>(),
+    {}};
   codegen_utils_detail::TypeVectorBuilder<ArgumentTypes...>
-      ::AppendAnnotatedTypes(this,
-                             &named_external_fn.argument_types);
+  ::AppendAnnotatedTypes(this,
+                         &named_external_fn.argument_types);
 
   named_external_functions_.emplace_back(std::move(named_external_fn));
 }
@@ -1118,8 +1183,8 @@ class FunctionTypeUnpacker<ReturnType(*)(ArgumentTypes...)> {
   }
 
   static auto GetFunctionPointerImpl(gpcodegen::CodegenUtils* codegen_utils,
-                                       const std::string& func_name)
-    -> ReturnType (*)(ArgumentTypes...) {
+                                     const std::string& func_name)
+  -> ReturnType (*)(ArgumentTypes...) {
     return codegen_utils->GetFunctionPointerImpl<ReturnType, ArgumentTypes...>(
         func_name);
   }
@@ -1156,7 +1221,7 @@ FunctionType CodegenUtils::GetFunctionPointer(
 
 template <typename ReturnType, typename... ArgumentTypes>
 auto CodegenUtils::GetFunctionPointerImpl(const std::string& function_name)
-    -> ReturnType (*)(ArgumentTypes...) {
+-> ReturnType (*)(ArgumentTypes...) {
   if (engine_) {
 #ifdef GPCODEGEN_DEBUG
     CheckFunctionType(function_name,
@@ -1185,7 +1250,7 @@ void CodegenUtils::CreateFallback(llvm::Function* regular_function,
   /* Return the result of the call, or void if the function returns void. */
   if (std::is_same<typename
       codegen_utils_detail::FunctionTypeUnpacker<FunctionType>::R,
-                                                 void>::value) {
+      void>::value) {
     ir_builder()->CreateRetVoid();
   } else {
     ir_builder()->CreateRet(call_fallback_func);
@@ -1344,49 +1409,54 @@ template <>
 class ArithOpMaker<double> {
  public:
 
-   static llvm::Value* CreateAddOverflow(CodegenUtils* generator,
-                                         llvm::Value* arg0,
-                                         llvm::Value* arg1) {
-     Checker(arg0, arg1);
-     llvm::Value* casted_arg0 = generator->ir_builder()->CreateSIToFP(arg0, generator->GetType<double>());
-     llvm::Value* casted_arg1 = generator->ir_builder()->CreateSIToFP(arg1, generator->GetType<double>());
+  static llvm::Value* CreateAddOverflow(CodegenUtils* generator,
+                                        llvm::Value* arg0,
+                                        llvm::Value* arg1) {
+    Checker(arg0, arg1);
 
-     return generator->ir_builder()->CreateFAdd(casted_arg0, casted_arg1);
-   }
+    // generator->CreateElog(INFO, "CreateAddOverflow: arg0=%d, arg1=%d", arg0, arg1);
 
-   static llvm::Value* CreateSubOverflow(CodegenUtils* generator,
-                                         llvm::Value* arg0,
-                                         llvm::Value* arg1) {
-     Checker(arg0, arg1);
-     llvm::Value* casted_arg0 = generator->CreateCast<double>(arg0);
-     llvm::Value* casted_arg1 = generator->CreateCast<double>(arg1);
+    llvm::Value* casted_arg0 = generator->ir_builder()->CreateBitCast(arg0, generator->GetType<double>());//generator->ir_builder()->CreateSIToFP(arg0, generator->GetType<double>());
+    llvm::Value* casted_arg1 = generator->ir_builder()->CreateBitCast(arg1, generator->GetType<double>());//generator->ir_builder()->CreateSIToFP(arg1, generator->GetType<double>());
 
-     return generator->CreateIntrinsicInstrCall(llvm::Intrinsic::ssub_with_overflow,
-                                     generator->GetType<double>(),
-                                     casted_arg0,
-                                     casted_arg1);
-   }
+    generator->CreateElog(INFO, "CreateAddOverflow: casted_arg0=%lf, casted_arg1=%lf", casted_arg0, casted_arg1);
 
-   static llvm::Value* CreateMulOverflow(CodegenUtils* generator,
-                                         llvm::Value* arg0,
-                                         llvm::Value* arg1) {
-     Checker(arg0, arg1);
-     llvm::Value* casted_arg0 = generator->CreateCast<double>(arg0);
-     llvm::Value* casted_arg1 = generator->CreateCast<double>(arg1);
+    return generator->ir_builder()->CreateFAdd(casted_arg0, casted_arg1);
+  }
 
-     return generator->CreateIntrinsicInstrCall(llvm::Intrinsic::smul_with_overflow,
-                                     generator->GetType<double>(),
-                                     casted_arg0,
-                                     casted_arg1);
-   }
-  private:
-   static void Checker(llvm::Value* arg0,
-                       llvm::Value* arg1) {
-     assert(nullptr != arg0 && nullptr != arg0->getType());
-     assert(nullptr != arg1 && nullptr != arg1->getType());
-//     assert(arg0->getType()->isFloatingPointTy());
-//     assert(arg1->getType()->isFloatingPointTy());
-   }
+  static llvm::Value* CreateSubOverflow(CodegenUtils* generator,
+                                        llvm::Value* arg0,
+                                        llvm::Value* arg1) {
+    Checker(arg0, arg1);
+    llvm::Value* casted_arg0 = generator->CreateCast<double>(arg0);
+    llvm::Value* casted_arg1 = generator->CreateCast<double>(arg1);
+
+    return generator->CreateIntrinsicInstrCall(llvm::Intrinsic::ssub_with_overflow,
+                                               generator->GetType<double>(),
+                                               casted_arg0,
+                                               casted_arg1);
+  }
+
+  static llvm::Value* CreateMulOverflow(CodegenUtils* generator,
+                                        llvm::Value* arg0,
+                                        llvm::Value* arg1) {
+    Checker(arg0, arg1);
+    llvm::Value* casted_arg0 = generator->CreateCast<double>(arg0);
+    llvm::Value* casted_arg1 = generator->CreateCast<double>(arg1);
+
+    return generator->CreateIntrinsicInstrCall(llvm::Intrinsic::smul_with_overflow,
+                                               generator->GetType<double>(),
+                                               casted_arg0,
+                                               casted_arg1);
+  }
+ private:
+  static void Checker(llvm::Value* arg0,
+                      llvm::Value* arg1) {
+    assert(nullptr != arg0 && nullptr != arg0->getType());
+    assert(nullptr != arg1 && nullptr != arg1->getType());
+    //     assert(arg0->getType()->isFloatingPointTy());
+    //     assert(arg1->getType()->isFloatingPointTy());
+  }
 };
 
 }  // namespace codegen_utils_detail
