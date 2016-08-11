@@ -170,9 +170,10 @@ void* ExecEvalExprCodegenEnroll(
 void* AdvanceAggregatesCodegenEnroll(
     AdvanceAggregatesFn regular_func_ptr,
     AdvanceAggregatesFn* ptr_to_chosen_func_ptr,
-    AggState *aggstate) {
+    AggState *aggstate,
+    AggStatePerGroupData *pergroup) {
   AdvanceAggregatesCodegen* generator = CodegenEnroll<AdvanceAggregatesCodegen>(
-      regular_func_ptr, ptr_to_chosen_func_ptr, aggstate);
+      regular_func_ptr, ptr_to_chosen_func_ptr, aggstate, pergroup);
   return generator;
 }
 

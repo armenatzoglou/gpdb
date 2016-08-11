@@ -45,19 +45,21 @@ AdvanceAggregatesCodegen::AdvanceAggregatesCodegen(
     CodegenManager* manager,
     AdvanceAggregatesFn regular_func_ptr,
     AdvanceAggregatesFn* ptr_to_regular_func_ptr,
-    AggState *aggstate)
+    AggState *aggstate,
+    AggStatePerGroupData *pergroup)
 : BaseCodegen(manager,
               kAdvanceAggregatesPrefix,
               regular_func_ptr,
               ptr_to_regular_func_ptr),
-              aggstate_(aggstate) {
+              aggstate_(aggstate),
+              pergroup_(pergroup) {
 }
 
 bool AdvanceAggregatesCodegen::GenerateAdvanceAggregates(
     gpcodegen::GpCodegenUtils* codegen_utils) {
 
   assert(NULL != codegen_utils);
-  if (nullptr == aggstate_) {
+  if (nullptr == aggstate_ || nullptr == pergroup_) {
     return false;
   }
 

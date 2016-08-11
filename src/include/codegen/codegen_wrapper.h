@@ -66,7 +66,7 @@ typedef Datum (*SlotGetAttrFn) (struct TupleTableSlot *slot, int attnum, bool *i
 #define call_ExecVariableList(projInfo, values, isnull) ExecVariableList(projInfo, values, isnull)
 #define enroll_ExecVariableList_codegen(regular_func, ptr_to_chosen_func, proj_info, slot)
 #define #define call_AdvanceAggregates(aggstate, pergroup, mem_manager) advance_aggregates(aggstate, pergroup, mem_manager)
-#define enroll_AdvanceAggregates_codegen(regular_func, ptr_to_chosen_func, aggstate)
+#define enroll_AdvanceAggregates_codegen(regular_func, ptr_to_chosen_func, aggstate, pergroup)
 #else
 
 /*
@@ -186,7 +186,8 @@ ExecEvalExprCodegenEnroll(ExecEvalExprFn regular_func_ptr,
 void*
 AdvanceAggregatesCodegenEnroll(AdvanceAggregatesFn regular_func_ptr,
 		AdvanceAggregatesFn* ptr_to_regular_func_ptr,
-		struct AggState *aggstate);
+		struct AggState *aggstate,
+		struct AggStatePerGroupData *pergroup);
 
 #ifdef __cplusplus
 }  // extern "C"
@@ -243,7 +244,7 @@ AdvanceAggregatesCodegenEnroll(AdvanceAggregatesFn regular_func_ptr,
  * Function pointer may point to regular version or generated function
  */
 #define call_AdvanceAggregates(aggstate, pergroup, mem_manager) \
-		aggstate->pergroup->AdvanceAggregates_gen_info.AdvanceAggregates_fn(aggstate, pergroup, mem_manager)
+		aggstate->AdvanceAggregates_gen_info.AdvanceAggregates_fn(aggstate, pergroup, mem_manager)
 
 /*
  * Enrollment macros
@@ -260,10 +261,10 @@ AdvanceAggregatesCodegenEnroll(AdvanceAggregatesFn regular_func_ptr,
         (ExecEvalExprFn)regular_func, (ExecEvalExprFn*)ptr_to_regular_func_ptr, exprstate, econtext, plan_state); \
         Assert(exprstate->evalfunc == regular_func); \
 
-#define enroll_AdvanceAggregates_codegen(regular_func, ptr_to_regular_func_ptr, aggstate) \
-		aggstate->pergroup->AdvanceAggregates_gen_info.code_generator = AdvanceAggregatesCodegenEnroll( \
-        regular_func, ptr_to_regular_func_ptr, aggstate); \
-        Assert(aggstate->pergroup->AdvanceAggregates_gen_info.AdvanceAggregates_fn == regular_func); \
+#define enroll_AdvanceAggregates_codegen(regular_func, ptr_to_regular_func_ptr, aggstate, pergroup) \
+		aggstate->AdvanceAggregates_gen_info.code_generator = AdvanceAggregatesCodegenEnroll( \
+        regular_func, ptr_to_regular_func_ptr, aggstate, pergroup); \
+        Assert(aggstate->AdvanceAggregates_gen_info.AdvanceAggregates_fn == regular_func); \
 
 #endif //USE_CODEGEN
 

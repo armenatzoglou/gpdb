@@ -31,6 +31,7 @@ class AdvanceAggregatesCodegen: public BaseCodegen<AdvanceAggregatesFn> {
    * @param ptr_to_chosen_func_ptr  Reference to the function pointer that the
    *                                caller will call.
    * @param aggstate                The AggState to use for generating code.
+   * @param pergroup                The AggStatePerGroupData to use for generating code.
    *
    * @note 	The ptr_to_chosen_func_ptr can refer to either the generated
    *        function or the corresponding regular version.
@@ -39,7 +40,8 @@ class AdvanceAggregatesCodegen: public BaseCodegen<AdvanceAggregatesFn> {
   explicit AdvanceAggregatesCodegen(CodegenManager* manager,
                                     AdvanceAggregatesFn regular_func_ptr,
                                     AdvanceAggregatesFn* ptr_to_regular_func_ptr,
-                                    AggState *aggstate);
+                                    AggState *aggstate,
+                                    AggStatePerGroupData *pergroup);
 
   virtual ~AdvanceAggregatesCodegen() = default;
 
@@ -61,6 +63,7 @@ class AdvanceAggregatesCodegen: public BaseCodegen<AdvanceAggregatesFn> {
 
  private:
   AggState *aggstate_;
+  AggStatePerGroupData *pergroup_;
 
   static constexpr char kAdvanceAggregatesPrefix[] = "AdvanceAggregates";
 

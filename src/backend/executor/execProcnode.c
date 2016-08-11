@@ -80,6 +80,7 @@
  */
 #include "postgres.h"
 
+#include "executor/execHHashagg.h"
 #include "executor/executor.h"
 #include "executor/instrument.h"
 #include "executor/nodeAgg.h"
@@ -880,14 +881,39 @@ void
 EnrollTransitionFunctions(AggState* aggstate)
 {
 #ifdef USE_CODEGEN
-  if (NULL == aggstate ||
-      NULL == aggstate->pergroup)
+  if (NULL == aggstate)
   {
     return;
   }
-  enroll_AdvanceAggregates_codegen(advance_aggregates,
-                                   &aggstate->pergroup->AdvanceAggregates_gen_info.AdvanceAggregates_fn,
-                                   aggstate);
+
+  /*
+   * AggStatePerGroup can be either:
+   * (1) aggstate->hhashtable->groupaggs->aggs, in hashed case, or
+   * (2) aggstate->pergroup and/or aggstate->perpassthru, in non-hashed case.
+   * Note that aggstate->perpassthru is used in ROLLUP operations.
+   */
+
+  if (NULL != aggstate->perpassthru)
+  {
+    /* We do not support pass-thru tuples*/
+    return;
+  }
+  else if (NULL != aggstate->hhashtable &&
+      NULL != aggstate->hhashtable->groupaggs)
+  {
+    /* Hashed Aggregate*/
+    enroll_AdvanceAggregates_codegen(advance_aggregates,
+                                       &aggstate->AdvanceAggregates_gen_info.AdvanceAggregates_fn,
+                                       aggstate, aggstate->hhashtable->groupaggs->aggs);
+  }
+  else if (NULL != aggstate->pergroup)
+  {
+    /* Non-hashed aggregate */
+    enroll_AdvanceAggregates_codegen(advance_aggregates,
+                                       &aggstate->AdvanceAggregates_gen_info.AdvanceAggregates_fn,
+                                       aggstate, aggstate->pergroup);
+  }
+
 #endif
 }
 

@@ -2332,6 +2332,15 @@ typedef struct SortState
 
 } SortState;
 
+
+typedef struct AdvanceAggregatesCodegenInfo
+{
+  /* Pointer to store AdvanceAggregatesCodegen from Codegen */
+  void* code_generator;
+  /* Function pointer that points to either regular or generated advance_aggregates */
+  AdvanceAggregatesFn AdvanceAggregates_fn;
+} AdvanceAggregatesCodegenInfo;
+
 /* ---------------------
  *	AggState information
  *
@@ -2392,6 +2401,9 @@ typedef struct AggState
 	/* set if the operator created workfiles */
 	bool		workfiles_created;
 
+#ifdef USE_CODEGEN
+  AdvanceAggregatesCodegenInfo AdvanceAggregates_gen_info;
+#endif
 } AggState;
 
 
