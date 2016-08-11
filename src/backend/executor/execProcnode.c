@@ -880,41 +880,44 @@ EnrollProjInfoTargetList(PlanState* result, ProjectionInfo* ProjInfo)
 void
 EnrollTransitionFunctions(AggState* aggstate)
 {
-#ifdef USE_CODEGEN
-  if (NULL == aggstate)
-  {
-    return;
-  }
+	 if(codegen)
+	 {
+		 if (NULL == aggstate)
+		 {
+			 return;
+		 }
 
-  /*
-   * AggStatePerGroup can be either:
-   * (1) aggstate->hhashtable->groupaggs->aggs, in hashed case, or
-   * (2) aggstate->pergroup and/or aggstate->perpassthru, in non-hashed case.
-   * Note that aggstate->perpassthru is used in ROLLUP operations.
-   */
+		 /*
+		  * AggStatePerGroupData can be either:
+		  * (1) aggstate->hhashtable->groupaggs->aggs, in hashed case, or
+		  * (2) aggstate->pergroup and/or aggstate->perpassthru, in non-hashed case.
+		  * Note that aggstate->perpassthru is used in ROLLUP operations.
+		  * Also, in hashed case, hhashtable is initiated in create_agg_hash_table,
+		  * which is called by ExecAgg.
+		  */
 
-  if (NULL != aggstate->perpassthru)
-  {
-    /* We do not support pass-thru tuples*/
-    return;
-  }
-  else if (NULL != aggstate->hhashtable &&
-      NULL != aggstate->hhashtable->groupaggs)
-  {
-    /* Hashed Aggregate*/
-    enroll_AdvanceAggregates_codegen(advance_aggregates,
-                                       &aggstate->AdvanceAggregates_gen_info.AdvanceAggregates_fn,
-                                       aggstate, aggstate->hhashtable->groupaggs->aggs);
-  }
-  else if (NULL != aggstate->pergroup)
-  {
-    /* Non-hashed aggregate */
-    enroll_AdvanceAggregates_codegen(advance_aggregates,
-                                       &aggstate->AdvanceAggregates_gen_info.AdvanceAggregates_fn,
-                                       aggstate, aggstate->pergroup);
-  }
+		 if (NULL != aggstate->perpassthru)
+		 {
+			 /* We do not support pass-thru tuples*/
+			 return;
+		 }
+		 else if (((Agg *)aggstate->ss.ps.plan)->aggstrategy == AGG_HASHED)
+		 {
+			 /* Hashed Aggregate case.
+			  * advance_aggregates cannot be enrolled here since
+			  * AggStatePerGroupData struct has not initialized yet.
+			  */
+			 return;
+		 }
+		 else if (NULL != aggstate->pergroup)
+		 {
+			 /* Non-hashed aggregate */
+			 enroll_AdvanceAggregates_codegen(advance_aggregates,
+					 &aggstate->AdvanceAggregates_gen_info.AdvanceAggregates_fn,
+					 aggstate, aggstate->pergroup);
+		 }
 
-#endif
+	 }
 }
 
 /* ----------------------------------------------------------------
