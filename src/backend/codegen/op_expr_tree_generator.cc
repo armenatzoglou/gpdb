@@ -57,6 +57,11 @@ OpExprTreeGenerator::supported_function_;
 void OpExprTreeGenerator::InitializeSupportedFunction() {
   if (!supported_function_.empty()) { return; }
 
+
+  supported_function_[65] = std::unique_ptr<PGFuncGeneratorInterface>(
+		  new PGIRBuilderFuncGenerator<bool, int32_t, int32_t>(
+		            65, "int4eq", &IRBuilder<>::CreateICmpEQ));
+
   supported_function_[141] = std::unique_ptr<PGFuncGeneratorInterface>(
       new PGGenericFuncGenerator<int32_t, int32_t, int32_t>(
           141,
@@ -92,6 +97,7 @@ void OpExprTreeGenerator::InitializeSupportedFunction() {
           463,
           "int8pl",
           &PGArithFuncGenerator<int64_t, int64_t, int64_t>::AddWithOverflow));
+
 
   supported_function_[216] = std::unique_ptr<PGFuncGeneratorInterface>(
       new PGGenericFuncGenerator<float8, float8, float8>(

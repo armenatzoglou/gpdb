@@ -168,6 +168,9 @@ static void ExecCdbTraceNode(PlanState *node, bool entry, TupleTableSlot *result
  static void
  EnrollJoinQualList(JoinState* result);
 
+ void
+ EnrollHashClauseslList(HashJoinState* result);
+
  static void
  EnrollProjInfoTargetList(PlanState* result, ProjectionInfo* ProjInfo);
 
@@ -534,6 +537,9 @@ ExecInitNode(Plan *node, EState *estate, int eflags)
 			result = (PlanState *) ExecInitHashJoin((HashJoin *) node,
 													estate, eflags);
 			}
+			HashJoinState *hjs = (HashJoinState *) result;
+			EnrollHashClauseslList(hjs);
+
 			END_MEMORY_ACCOUNT();
 			break;
 
@@ -804,6 +810,38 @@ ExecInitNode(Plan *node, EState *estate, int eflags)
 
 
 /* ----------------------------------------------------------------
+ *    EnrollHashClausesList
+ *
+ *    Enroll JoinQual List's expr state from JoinState for codegen.
+ * ----------------------------------------------------------------
+ */
+void
+EnrollHashClauseslList(HashJoinState* result)
+{
+#ifdef USE_CODEGEN
+	if (NULL == result ||
+	    NULL == result->hashclauses)
+	{
+		return;
+	}
+
+	ListCell *l;
+	foreach(l, result->hashclauses)
+	{
+	  ExprState *exprstate = (ExprState*) lfirst(l);
+	  enroll_ExecEvalExpr_codegen(exprstate->evalfunc,
+	                              &exprstate->evalfunc,
+	                              exprstate,
+								  result->js.ps.ps_ExprContext,
+	                              NULL /*planstate to determine slot_getattr codegen*/
+	                              );
+	}
+
+#endif
+}
+
+
+/* ----------------------------------------------------------------
  *    EnrollJoinQualList
  *
  *    Enroll JoinQual List's expr state from JoinState for codegen.
@@ -814,8 +852,7 @@ EnrollJoinQualList(JoinState* result)
 {
 #ifdef USE_CODEGEN
 	if (NULL == result ||
-	    NULL == result->joinqual ||
-		NULL == result->ps)
+	    NULL == result->joinqual)
 	{
 		return;
 	}
