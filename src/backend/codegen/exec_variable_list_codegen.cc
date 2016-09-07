@@ -74,8 +74,8 @@ bool ExecVariableListCodegen::InitDependencies() {
   max_attr_ = *std::max_element(
       proj_info_->pi_varNumbers,
       proj_info_->pi_varNumbers + list_length(proj_info_->pi_targetlist));
-  slot_getattr_codegen_ = SlotGetAttrCodegen::GetCodegenInstance(
-      manager(), slot_, max_attr_);
+//  slot_getattr_codegen_ = SlotGetAttrCodegen::GetCodegenInstance(
+//      manager(), slot_, max_attr_);
   return true;
 }
 
