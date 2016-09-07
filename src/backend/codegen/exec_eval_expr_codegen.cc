@@ -76,7 +76,10 @@ bool ExecEvalExprCodegen::InitDependencies() {
 
 void ExecEvalExprCodegen::PrepareSlotGetAttr() {
   TupleTableSlot* slot = nullptr;
-  assert(nullptr != plan_state_);
+  if (nullptr == plan_state_) {
+	  slot_getattr_codegen_ = nullptr;
+	  return;
+  }
   switch (nodeTag(plan_state_)) {
     case T_SeqScanState:
     case T_TableScanState:

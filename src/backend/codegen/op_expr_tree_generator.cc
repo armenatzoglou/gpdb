@@ -64,7 +64,7 @@ void OpExprTreeGenerator::InitializeSupportedFunction() {
           &PGArithFuncGenerator<int32_t, int32_t, int32_t>::MulWithOverflow));
 
   supported_function_[149] = std::unique_ptr<PGFuncGeneratorInterface>(
-      new PGIRBuilderFuncGenerator<int32_t, int32_t, int32_t>(
+      new PGIRBuilderFuncGenerator<bool, int32_t, int32_t>(
           149,
           "int4le",
           &IRBuilder<>::CreateICmpSLE));
@@ -116,7 +116,7 @@ void OpExprTreeGenerator::InitializeSupportedFunction() {
           1088, "date_le", &IRBuilder<>::CreateICmpSLE));
 
   supported_function_[2339] = std::unique_ptr<PGFuncGeneratorInterface>(
-      new PGGenericFuncGenerator<int32_t, int32_t, int64_t>(
+      new PGGenericFuncGenerator<bool, int32_t, int64_t>(
           2339,
           "date_le_timestamp",
           &PGDateFuncGenerator::DateLETimestamp));

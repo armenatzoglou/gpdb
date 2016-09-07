@@ -166,6 +166,9 @@ static void ExecCdbTraceNode(PlanState *node, bool entry, TupleTableSlot *result
  EnrollQualList(PlanState* result);
 
  static void
+ EnrollJoinQualList(JoinState* result);
+
+ static void
  EnrollProjInfoTargetList(PlanState* result, ProjectionInfo* ProjInfo);
 
 /*
@@ -506,6 +509,9 @@ ExecInitNode(Plan *node, EState *estate, int eflags)
 			result = (PlanState *) ExecInitNestLoop((NestLoop *) node,
 													estate, eflags);
 			}
+			NestLoopState* nss = (NestLoopState*)result;
+			EnrollJoinQualList(&nss->js);
+
 			END_MEMORY_ACCOUNT();
 			break;
 
@@ -795,6 +801,40 @@ ExecInitNode(Plan *node, EState *estate, int eflags)
 
 	return result;
 }
+
+
+/* ----------------------------------------------------------------
+ *    EnrollJoinQualList
+ *
+ *    Enroll JoinQual List's expr state from JoinState for codegen.
+ * ----------------------------------------------------------------
+ */
+void
+EnrollJoinQualList(JoinState* result)
+{
+#ifdef USE_CODEGEN
+	if (NULL == result ||
+	    NULL == result->joinqual ||
+		NULL == result->ps)
+	{
+		return;
+	}
+
+	ListCell *l;
+	foreach(l, result->joinqual)
+	{
+	  ExprState *exprstate = (ExprState*) lfirst(l);
+	  enroll_ExecEvalExpr_codegen(exprstate->evalfunc,
+	                              &exprstate->evalfunc,
+	                              exprstate,
+								  result->ps.ps_ExprContext,
+	                              NULL /*planstate to determine slot_getattr codegen*/
+	                              );
+	}
+
+#endif
+}
+
 
 /* ----------------------------------------------------------------
  *    EnrollQualList
