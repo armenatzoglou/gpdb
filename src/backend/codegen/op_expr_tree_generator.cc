@@ -81,7 +81,7 @@ void OpExprTreeGenerator::InitializeSupportedFunction() {
           &PGArithFuncGenerator<int32_t, int32_t, int32_t>::AddWithOverflow));
 
   supported_function_[1841] = std::unique_ptr<PGFuncGeneratorInterface>(
-      new PGGenericFuncGenerator<int64_t, int32_t>(
+      new PGGenericFuncGenerator<int64_t, int64_t, int32_t>(
           1841,
           "int4_sum",
           &PGArithFuncGenerator<int64_t, int64_t, int32_t>::AddWithOverflow));
@@ -93,7 +93,7 @@ void OpExprTreeGenerator::InitializeSupportedFunction() {
           &PGArithFuncGenerator<int32_t, int32_t, int32_t>::SubWithOverflow));
 
   supported_function_[463] = std::unique_ptr<PGFuncGeneratorInterface>(
-      new PGGenericFuncGenerator<int64_t, int64_t>(
+      new PGGenericFuncGenerator<int64_t, int64_t, int64_t>(
           463,
           "int8pl",
           &PGArithFuncGenerator<int64_t, int64_t, int64_t>::AddWithOverflow));
