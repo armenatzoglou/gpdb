@@ -81,6 +81,7 @@ bool ExecVariableListCodegen::InitDependencies() {
 
 bool ExecVariableListCodegen::GenerateExecVariableList(
     gpcodegen::GpCodegenUtils* codegen_utils) {
+	return false;
   assert(nullptr != codegen_utils);
   static_assert(sizeof(Datum) == sizeof(int64_t),
       "sizeof(Datum) doesn't match sizeof(int64)");
