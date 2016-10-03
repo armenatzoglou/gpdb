@@ -17,6 +17,27 @@ resources:
     secret_access_key: {{aws-secret-access-key}}
     versioned_file: instance_ids.txt
 
+- name: bin_xerces
+  type: s3
+  source:
+    access_key_id: {{aws-access-key-id}}
+    bucket: {{bucket-name}}
+    region_name: {{aws-region}}
+    secret_access_key: {{aws-secret-access-key}}
+    regexp: bin_xerces_centos(6).tar.gz
+
+- name: orca
+  type: github-release
+  source:
+    user: greenplum-db
+    repository: gporca
+
+- name: gpos
+  type: github-release
+  source:
+    user: greenplum-db
+    repository: gpos
+
 ########
 # JOBS #
 ########
@@ -29,6 +50,21 @@ jobs:
       params:
         submodules: none
       trigger: false  # At this stage we don't want create/delete VMs for each commit
+    - get: bin_xerces
+    - get: bin_orca
+      resource: orca
+      params:
+        globs:
+        - bin_orca_centos5_release.tar.gz
+    - get: bin_gpos
+      resource: gpos
+      params:
+        globs:
+        - bin_gpos_centos5_release.tar.gz
+
+  - task: build_with_orca_and_codegen
+    file: gpdb_src/concourse/build_with_orca_and_codegen.yml
+
   - task: provision_instance
     file: gpdb_src/concourse/provision.yml
     params: &aws_config
@@ -50,6 +86,7 @@ jobs:
   - put: instance_ids
     params:
       file: instance_ids/instance_ids.txt
+
 - name: unprovision
   max_in_flight: 1
   plan:
