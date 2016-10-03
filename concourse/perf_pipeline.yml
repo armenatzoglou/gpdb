@@ -5,8 +5,8 @@ resources:
 - name: gpdb_src
   type: git
   source:
-    branch: master 
-    uri: https://github.com/greenplum-db/gpdb
+    branch: build_and_install_gpdb_130562999
+    uri: https://github.com/armenatzoglou/gpdb
 
 - name: instance_ids
   type: s3
