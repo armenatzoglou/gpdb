@@ -9,6 +9,17 @@ remote_run() {
   ssh -i "${KEYFILE}" -t -t ${SSH_USER}@${IP} "${@:2}"
 }
 
+remote_run_script() {
+  local IP="$1"
+  local USER="$2"
+  local EXPORTS="$3"
+  local SCRIPT="$4"
+  local KEYFILE="${AWS_KEYPAIR}.pem"
+
+  echo -e "${EXPORTS};\n$(cat ${SCRIPT});\nexit" | ssh -i "${KEYFILE}" -t -t ${SSH_USER}@${IP} "sudo -u ${USER} bash -s" 2>&1
+}
+
+
 error() {
   echo >&2 "$@"
   exit 1

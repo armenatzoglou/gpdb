@@ -2,7 +2,7 @@
 
 set -e -u
 
-source $(dirname "$0")/perf_common.sh
+source $(dirname "$0")/common.sh
 
 main() {
   check_config
@@ -16,6 +16,13 @@ main() {
   # For demonstration only - the next story should remove these lines
   local PRIVATE_IP=$(ec2-describe-instances --show-empty-fields ${INSTANCE_IDS} | grep INSTANCE | cut -f18) # Extract private IP
   remote_run ${PRIVATE_IP} "echo 'Connected to VM!' && hostname"
+
+  remote_run_script ${PRIVATE_IP} root "export HOST=perfhost" "$(dirname "$0")/prepare_kernel.sh"
+
+  remote_run_script ${PRIVATE_IP} root "export HOST=perfhost" "$(dirname "$0")/prepare_security.sh"
+  log "Running ulimit to verify changes to limits"
+  remote_run ${PRIVATE_IP} "ulimit -a"
+  remote_run_script ${PRIVATE_IP} root "export HOST=perfhost PRIVATE_IP=${PRIVATE_IP}" "$(dirname "$0")/prepare_network.sh"
 }
 
 check_tools() {
