@@ -321,7 +321,7 @@ bool AdvanceAggregatesCodegen::GenerateAdvanceAggregates(
   // ---------------
   irb->SetInsertPoint(error_aggstate_block);
 
-  codegen_utils->CreateElog(ERROR, "Codegened advance_aggregates: "
+  codegen_utils->CreateElog(DEBUG1, "Codegened advance_aggregates: "
       "use of different aggstate.");
 
   irb->CreateRetVoid();
@@ -330,7 +330,7 @@ bool AdvanceAggregatesCodegen::GenerateAdvanceAggregates(
   // ---------------
   irb->SetInsertPoint(null_attribute_block);
 
-  codegen_utils->CreateElog(ERROR, "Codegened advance_aggregates: "
+  codegen_utils->CreateElog(DEBUG1, "Codegened advance_aggregates: "
       "NULL attributes are not supported.");
 
   irb->CreateRetVoid();
