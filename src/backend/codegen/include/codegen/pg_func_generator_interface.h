@@ -68,6 +68,11 @@ class PGFuncGeneratorInterface {
   virtual size_t GetTotalArgCount() = 0;
 
   /**
+   * @return True if function is strict; false otherwise.
+   */
+  virtual bool IsStrict() = 0;
+
+  /**
    * @brief Generate the code for Greenplum function.
    *
    * @param codegen_utils     Utility to easy code generation.

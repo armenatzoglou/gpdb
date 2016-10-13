@@ -140,10 +140,12 @@ class PGIRBuilderFuncGenerator
    **/
   PGIRBuilderFuncGenerator(int pg_func_oid,
                            const std::string& pg_func_name,
-                           IRBuilderFuncPtrType mem_func_ptr)
+                           IRBuilderFuncPtrType mem_func_ptr,
+                           bool pg_func_strict)
   : pg_func_oid_(pg_func_oid),
     pg_func_name_(pg_func_name),
-    func_ptr_(mem_func_ptr) {
+    func_ptr_(mem_func_ptr),
+    pg_func_strict_(pg_func_strict) {
   }
 
   std::string GetName() final {
@@ -153,6 +155,10 @@ class PGIRBuilderFuncGenerator
   size_t GetTotalArgCount() final {
     // Support Binary IRBuilder functions only
     return 2;
+  }
+
+  bool IsStrict() final {
+    return pg_func_strict_;
   }
 
   bool GenerateCode(gpcodegen::GpCodegenUtils* codegen_utils,
@@ -179,6 +185,7 @@ class PGIRBuilderFuncGenerator
   int pg_func_oid_;
   std::string pg_func_name_;
   IRBuilderFuncPtrType func_ptr_;
+  bool pg_func_strict_;
 };
 
 /**
@@ -201,10 +208,12 @@ class PGGenericFuncGenerator : public  PGFuncGeneratorInterface {
    **/
   PGGenericFuncGenerator(int pg_func_oid,
                          const std::string& pg_func_name,
-                         PGFuncGenerator func_ptr)
+                         PGFuncGenerator func_ptr,
+                         bool pg_func_strict)
   : pg_func_oid_(pg_func_oid),
     pg_func_name_(pg_func_name),
-    func_ptr_(func_ptr) {
+    func_ptr_(func_ptr),
+    pg_func_strict_(pg_func_strict){
   }
 
   std::string GetName() final {
@@ -213,6 +222,10 @@ class PGGenericFuncGenerator : public  PGFuncGeneratorInterface {
 
   size_t GetTotalArgCount() final {
     return sizeof...(Args);
+  }
+
+  bool IsStrict() final {
+    return pg_func_strict_;
   }
 
   bool GenerateCode(gpcodegen::GpCodegenUtils* codegen_utils,
@@ -244,6 +257,7 @@ class PGGenericFuncGenerator : public  PGFuncGeneratorInterface {
   int pg_func_oid_;
   const std::string& pg_func_name_;
   PGFuncGenerator func_ptr_;
+  bool pg_func_strict_;
 };
 
 

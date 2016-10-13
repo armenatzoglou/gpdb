@@ -61,77 +61,90 @@ void OpExprTreeGenerator::InitializeSupportedFunction() {
       new PGGenericFuncGenerator<int32_t, int32_t, int32_t>(
           141,
           "int4mul",
-          &PGArithFuncGenerator<int32_t, int32_t, int32_t>::MulWithOverflow));
+          &PGArithFuncGenerator<int32_t, int32_t, int32_t>::MulWithOverflow,
+          true));
 
   supported_function_[149] = std::unique_ptr<PGFuncGeneratorInterface>(
       new PGIRBuilderFuncGenerator<bool, int32_t, int32_t>(
           149,
           "int4le",
-          &IRBuilder<>::CreateICmpSLE));
+          &IRBuilder<>::CreateICmpSLE,
+          true));
 
   supported_function_[177] = std::unique_ptr<PGFuncGeneratorInterface>(
       new PGGenericFuncGenerator<int32_t, int32_t, int32_t>(
           177,
           "int4pl",
-          &PGArithFuncGenerator<int32_t, int32_t, int32_t>::AddWithOverflow));
+          &PGArithFuncGenerator<int32_t, int32_t, int32_t>::AddWithOverflow,
+          true));
 
   supported_function_[1841] = std::unique_ptr<PGFuncGeneratorInterface>(
       new PGGenericFuncGenerator<int64_t, int64_t, int32_t>(
           1841,
           "int4_sum",
-          &PGArithFuncGenerator<int64_t, int64_t, int32_t>::AddWithOverflow));
+          &PGArithFuncGenerator<int64_t, int64_t, int32_t>::AddWithOverflow,
+          false));
 
   supported_function_[181] = std::unique_ptr<PGFuncGeneratorInterface>(
       new PGGenericFuncGenerator<int32_t, int32_t, int32_t>(
           181,
           "int4mi",
-          &PGArithFuncGenerator<int32_t, int32_t, int32_t>::SubWithOverflow));
+          &PGArithFuncGenerator<int32_t, int32_t, int32_t>::SubWithOverflow,
+          true));
 
   supported_function_[463] = std::unique_ptr<PGFuncGeneratorInterface>(
       new PGGenericFuncGenerator<int64_t, int64_t, int64_t>(
           463,
           "int8pl",
-          &PGArithFuncGenerator<int64_t, int64_t, int64_t>::AddWithOverflow));
+          &PGArithFuncGenerator<int64_t, int64_t, int64_t>::AddWithOverflow,
+          true));
 
   supported_function_[1219] = std::unique_ptr<PGFuncGeneratorInterface>(
       new PGGenericFuncGenerator<int64_t, int64_t>(
           1219,
           "int8inc",
-          &PGArithUnaryFuncGenerator<int64_t, int64_t>::IncWithOverflow));
+          &PGArithUnaryFuncGenerator<int64_t, int64_t>::IncWithOverflow,
+          true));
 
   supported_function_[2803] = std::unique_ptr<PGFuncGeneratorInterface>(
       new PGGenericFuncGenerator<int64_t, int64_t>(
           2803,
           "int8inc",
-          &PGArithUnaryFuncGenerator<int64_t, int64_t>::IncWithOverflow));
+          &PGArithUnaryFuncGenerator<int64_t, int64_t>::IncWithOverflow,
+          false));
 
   supported_function_[216] = std::unique_ptr<PGFuncGeneratorInterface>(
       new PGGenericFuncGenerator<float8, float8, float8>(
           216,
           "float8mul",
-          &PGArithFuncGenerator<float8, float8, float8>::MulWithOverflow));
+          &PGArithFuncGenerator<float8, float8, float8>::MulWithOverflow,
+          true));
 
   supported_function_[218] = std::unique_ptr<PGFuncGeneratorInterface>(
       new PGGenericFuncGenerator<float8, float8, float8>(
           218,
           "float8pl",
-          &PGArithFuncGenerator<float8, float8, float8>::AddWithOverflow));
+          &PGArithFuncGenerator<float8, float8, float8>::AddWithOverflow,
+          true));
 
   supported_function_[219] = std::unique_ptr<PGFuncGeneratorInterface>(
       new PGGenericFuncGenerator<float8, float8, float8>(
           219,
           "float8mi",
-          &PGArithFuncGenerator<float8, float8, float8>::SubWithOverflow));
+          &PGArithFuncGenerator<float8, float8, float8>::SubWithOverflow,
+          true));
 
   supported_function_[1088] = std::unique_ptr<PGFuncGeneratorInterface>(
       new PGIRBuilderFuncGenerator<bool, int32_t, int32_t>(
-          1088, "date_le", &IRBuilder<>::CreateICmpSLE));
+          1088, "date_le", &IRBuilder<>::CreateICmpSLE,
+          true));
 
   supported_function_[2339] = std::unique_ptr<PGFuncGeneratorInterface>(
       new PGGenericFuncGenerator<bool, int32_t, int64_t>(
           2339,
           "date_le_timestamp",
-          &PGDateFuncGenerator::DateLETimestamp));
+          &PGDateFuncGenerator::DateLETimestamp,
+          true));
 }
 
 PGFuncGeneratorInterface* OpExprTreeGenerator::GetPGFuncGenerator(
