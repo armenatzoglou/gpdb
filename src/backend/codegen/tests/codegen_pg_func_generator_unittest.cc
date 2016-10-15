@@ -194,7 +194,10 @@ TEST_F(CodegenPGFuncGeneratorTest, PGGenericFuncGeneratorTwoArgsTest) {
   std::vector<llvm::Value*> args = {
       ArgumentByPosition(double_add_fn, 0),
       ArgumentByPosition(double_add_fn, 1)};
-  PGFuncGeneratorInfo pg_gen_info(double_add_fn, error_block, args);
+  llvm::Value* llvm_isNull = irb->CreateAlloca(
+          codegen_utils_->GetType<bool>(), nullptr, "isNull");
+    irb->CreateStore(codegen_utils_->GetConstant<bool>(false), llvm_isNull);
+  PGFuncGeneratorInfo pg_gen_info(double_add_fn, error_block, args, llvm_isNull);
 
   EXPECT_TRUE(generator->GenerateCode(codegen_utils_.get(),
                                       pg_gen_info, &result));
@@ -256,8 +259,11 @@ TEST_F(CodegenPGFuncGeneratorTest, PGGenericFuncGeneratorOneArgTest) {
           &GenerateAddOne<int32_t>));
 
   llvm::Value* result = nullptr;
+  llvm::Value* llvm_isNull = irb->CreateAlloca(
+        codegen_utils_->GetType<bool>(), nullptr, "isNull");
+  irb->CreateStore(codegen_utils_->GetConstant<bool>(false), llvm_isNull);
   std::vector<llvm::Value*> args = {ArgumentByPosition(add_one_fn, 0)};
-  PGFuncGeneratorInfo pg_gen_info(add_one_fn, error_block, args);
+  PGFuncGeneratorInfo pg_gen_info(add_one_fn, error_block, args, llvm_isNull);
 
   EXPECT_TRUE(generator->GenerateCode(codegen_utils_.get(),
                                       pg_gen_info,

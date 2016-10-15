@@ -243,7 +243,8 @@ class PGGenericFuncGenerator : public  PGFuncGeneratorInterface {
 
     PGFuncGeneratorInfo pg_processed_func_info(pg_func_info.llvm_main_func,
                                                pg_func_info.llvm_error_block,
-                                               llvm_preproc_args);
+                                               llvm_preproc_args,
+                                               pg_func_info.llvm_isNull_ptr);
     this->func_ptr_(codegen_utils,
         pg_processed_func_info,
         llvm_out_value);

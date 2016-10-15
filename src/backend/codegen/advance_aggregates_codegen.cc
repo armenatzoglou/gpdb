@@ -92,6 +92,8 @@ bool AdvanceAggregatesCodegen::GenerateAdvanceTransitionFunction(
   }
 
   assert(nullptr != peraggstate->aggref);
+  // *transValueIsNull = fcinfo->isnull;
+  pg_func_info->llvm_isNull_ptr = llvm_pergroupstate_transValueIsNull_ptr;
   assert(pg_func_info->llvm_args.size() == 1 +
              list_length(peraggstate->aggref->args));
   pg_func_info->llvm_args[0] = irb->CreateLoad(
@@ -307,7 +309,9 @@ bool AdvanceAggregatesCodegen::GenerateAdvanceAggregates(
     gpcodegen::PGFuncGeneratorInfo pg_func_info(
         advance_aggregates_func,
         overflow_block,
-        llvm_in_args);
+        llvm_in_args,
+        nullptr /*isNull*/); // we will set it to
+                             // AggStatePerGroupData::transValueIsNull
 
     bool isGenerated = GenerateAdvanceTransitionFunction(
         codegen_utils, llvm_pergroup_arg, aggno, &pg_func_info);

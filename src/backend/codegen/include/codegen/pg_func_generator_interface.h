@@ -40,13 +40,18 @@ struct PGFuncGeneratorInfo {
   // This can be updated while generating the code.
   std::vector<llvm::Value*> llvm_args;
 
+  // Records if result is NULL
+  llvm::Value* llvm_isNull_ptr;
+
   PGFuncGeneratorInfo(
     llvm::Function* llvm_main_func,
     llvm::BasicBlock* llvm_error_block,
-    const std::vector<llvm::Value*>& llvm_args) :
+    const std::vector<llvm::Value*>& llvm_args,
+    llvm::Value* llvm_isNull_ptr) :
       llvm_main_func(llvm_main_func),
       llvm_error_block(llvm_error_block),
-      llvm_args(llvm_args) {
+      llvm_args(llvm_args),
+      llvm_isNull_ptr(llvm_isNull_ptr){
   }
 };
 
