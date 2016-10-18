@@ -96,8 +96,14 @@ bool AdvanceAggregatesCodegen::GenerateAdvanceTransitionFunction(
   pg_func_info->llvm_isNull_ptr = llvm_pergroupstate_transValueIsNull_ptr;
   assert(pg_func_info->llvm_args.size() == 1 +
              list_length(peraggstate->aggref->args));
+  // Initialize llvm_args[0] to transValue.
   pg_func_info->llvm_args[0] = irb->CreateLoad(
       llvm_pergroupstate_transValue_ptr);
+  // Initialize llvm_in_args_isNull[0] to transValueIsNull.
+  // fcinfo->argnull[0] = *transValueIsNull;
+  pg_func_info->llvm_args_isNull[0] = irb->CreateLoad(
+      pg_func_info->llvm_isNull_ptr);
+
 
   gpcodegen::PGFuncGeneratorInterface* pg_func_gen =
       gpcodegen::OpExprTreeGenerator::GetPGFuncGenerator(
@@ -295,14 +301,20 @@ bool AdvanceAggregatesCodegen::GenerateAdvanceAggregates(
     // We generate code for advance_transition_function.
     irb->SetInsertPoint(advance_transition_function_block);
 
-    // Collect input arguments and the transition value in a vector.
-    // The transition value is stored at the first position.
+    // Collect input arguments (also if they are NULL or not) and the transition
+    // value in a vector. The transition value is stored at the first position.
     std::vector<llvm::Value*> llvm_in_args(nargs+1);
+    std::vector<llvm::Value*> llvm_in_args_isNull(nargs+1);
     for (int i=0; i < nargs; ++i) {
       llvm_in_args[i+1] = irb->CreateLoad(
           irb->CreateInBoundsGEP(
               codegen_utils->GetType<Datum>(),
               llvm_in_args_ptr,
+              codegen_utils->GetConstant(i)));
+      llvm_in_args_isNull[i+1] = irb->CreateLoad(
+          irb->CreateInBoundsGEP(
+              codegen_utils->GetType<bool>(),
+              llvm_in_isnulls_ptr,
               codegen_utils->GetConstant(i)));
     }
 
@@ -310,6 +322,7 @@ bool AdvanceAggregatesCodegen::GenerateAdvanceAggregates(
         advance_aggregates_func,
         overflow_block,
         llvm_in_args,
+        llvm_in_args_isNull,
         nullptr /*isNull*/); // we will set it to
                              // AggStatePerGroupData::transValueIsNull
 

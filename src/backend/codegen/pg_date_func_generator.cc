@@ -79,6 +79,7 @@ llvm::Value* PGDateFuncGenerator::GenerateDate2Timestamp(
       pg_func_info.llvm_main_func,
       pg_func_info.llvm_error_block,
       {pg_func_info.llvm_args[0], llvm_USECS_PER_DAY},
+      pg_func_info.llvm_args_isNull,
       pg_func_info.llvm_isNull_ptr);
 
   PGArithFuncGenerator<int64_t, int32_t, int64_t>::ArithOpWithOverflow(

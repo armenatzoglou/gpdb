@@ -62,6 +62,7 @@ void OpExprTreeGenerator::InitializeSupportedFunction() {
           141,
           "int4mul",
           &PGArithFuncGenerator<int32_t, int32_t, int32_t>::MulWithOverflow,
+          nullptr,
           true));
 
   supported_function_[149] = std::unique_ptr<PGFuncGeneratorInterface>(
@@ -76,13 +77,17 @@ void OpExprTreeGenerator::InitializeSupportedFunction() {
           177,
           "int4pl",
           &PGArithFuncGenerator<int32_t, int32_t, int32_t>::AddWithOverflow,
+          nullptr,
           true));
 
+  // int4_sum is not a strict function. It checks if there are NULL arguments
+  // and performs actions accordingly.
   supported_function_[1841] = std::unique_ptr<PGFuncGeneratorInterface>(
       new PGGenericFuncGenerator<int64_t, int64_t, int32_t>(
           1841,
           "int4_sum",
           &PGArithFuncGenerator<int64_t, int64_t, int32_t>::AddWithOverflow,
+          &PGArithFuncGenerator<int64_t, int64_t, int32_t>::CheckNull,
           false));
 
   supported_function_[181] = std::unique_ptr<PGFuncGeneratorInterface>(
@@ -90,6 +95,7 @@ void OpExprTreeGenerator::InitializeSupportedFunction() {
           181,
           "int4mi",
           &PGArithFuncGenerator<int32_t, int32_t, int32_t>::SubWithOverflow,
+          nullptr,
           true));
 
   supported_function_[463] = std::unique_ptr<PGFuncGeneratorInterface>(
@@ -97,6 +103,7 @@ void OpExprTreeGenerator::InitializeSupportedFunction() {
           463,
           "int8pl",
           &PGArithFuncGenerator<int64_t, int64_t, int64_t>::AddWithOverflow,
+          nullptr,
           true));
 
   supported_function_[1219] = std::unique_ptr<PGFuncGeneratorInterface>(
@@ -104,13 +111,17 @@ void OpExprTreeGenerator::InitializeSupportedFunction() {
           1219,
           "int8inc",
           &PGArithUnaryFuncGenerator<int64_t, int64_t>::IncWithOverflow,
+          nullptr,
           true));
 
+  // int8inc is not strict, but it does not check if there are NULL attributes.
+  // Thus we pass a dummy function (DoNothing) instead of checking for NULLs.
   supported_function_[2803] = std::unique_ptr<PGFuncGeneratorInterface>(
       new PGGenericFuncGenerator<int64_t, int64_t>(
           2803,
           "int8inc",
           &PGArithUnaryFuncGenerator<int64_t, int64_t>::IncWithOverflow,
+          &PGArithUnaryFuncGenerator<int64_t, int64_t>::DoNothing,
           false));
 
   supported_function_[216] = std::unique_ptr<PGFuncGeneratorInterface>(
@@ -118,6 +129,7 @@ void OpExprTreeGenerator::InitializeSupportedFunction() {
           216,
           "float8mul",
           &PGArithFuncGenerator<float8, float8, float8>::MulWithOverflow,
+          nullptr,
           true));
 
   supported_function_[218] = std::unique_ptr<PGFuncGeneratorInterface>(
@@ -125,6 +137,7 @@ void OpExprTreeGenerator::InitializeSupportedFunction() {
           218,
           "float8pl",
           &PGArithFuncGenerator<float8, float8, float8>::AddWithOverflow,
+          nullptr,
           true));
 
   supported_function_[219] = std::unique_ptr<PGFuncGeneratorInterface>(
@@ -132,6 +145,7 @@ void OpExprTreeGenerator::InitializeSupportedFunction() {
           219,
           "float8mi",
           &PGArithFuncGenerator<float8, float8, float8>::SubWithOverflow,
+          nullptr,
           true));
 
   supported_function_[1088] = std::unique_ptr<PGFuncGeneratorInterface>(
@@ -144,6 +158,7 @@ void OpExprTreeGenerator::InitializeSupportedFunction() {
           2339,
           "date_le_timestamp",
           &PGDateFuncGenerator::DateLETimestamp,
+          nullptr,
           true));
 }
 
@@ -281,6 +296,7 @@ bool OpExprTreeGenerator::GenerateCode(GpCodegenUtils* codegen_utils,
   }
   bool arg_generated = true;
   std::vector<llvm::Value*> llvm_arguments;
+  std::vector<llvm::Value*> llvm_arguments_isNull;
   int argnum = 0;
   for (auto& arg : arguments_) {
     if (pg_func_interface->IsStrict()) {
@@ -306,6 +322,7 @@ bool OpExprTreeGenerator::GenerateCode(GpCodegenUtils* codegen_utils,
       return false;
     }
     llvm_arguments.push_back(llvm_arg);
+    llvm_arguments_isNull.push_back(irb->CreateLoad(llvm_arg_isNull_ptr));
     argnum++;
 
     if (pg_func_interface->IsStrict()) {
@@ -329,6 +346,7 @@ bool OpExprTreeGenerator::GenerateCode(GpCodegenUtils* codegen_utils,
   PGFuncGeneratorInfo pg_func_info(gen_info.llvm_main_func,
                                    gen_info.llvm_error_block,
                                    llvm_arguments,
+                                   llvm_arguments_isNull,
                                    llvm_isnull_ptr);
   bool retval = pg_func_interface->GenerateCode(codegen_utils,
                                                 pg_func_info,
@@ -350,16 +368,15 @@ bool OpExprTreeGenerator::GenerateCode(GpCodegenUtils* codegen_utils,
         codegen_utils->GetConstant<bool>(true),
         llvm_isnull_ptr);
 
-    //return (Datum) 0;
-    *llvm_out_value = codegen_utils->GetConstant<Datum>(0);
-
     irb->CreateBr(set_llvm_out_value_block);
 
     irb->SetInsertPoint(set_llvm_out_value_block);
 
     llvm::PHINode* llvm_out_value_phinode = irb->CreatePHI(
         codegen_utils->GetType<Datum>(), 2);
-    llvm_out_value_phinode->addIncoming(codegen_utils->GetConstant<Datum>(0), null_argument_block);
+    //return (Datum) 0;
+    llvm_out_value_phinode->addIncoming(codegen_utils->GetConstant<Datum>(0),
+                                        null_argument_block);
     llvm_out_value_phinode->addIncoming(llvm_out_value_tmp, last_block);
 
     *llvm_out_value = llvm_out_value_phinode;
