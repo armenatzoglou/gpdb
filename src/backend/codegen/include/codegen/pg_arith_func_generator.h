@@ -224,7 +224,7 @@ class PGArithFuncGenerator {
     // val = (int64) PG_GETARG_INT32(1)
     // PG_RETURN_INT64(val)
     irb->CreateStore(codegen_utils->CreateCast<int64, int32>(
-        codegen_utils->CreateCast<int32, Arg0>(pg_func_info.llvm_args[1])),
+        codegen_utils->CreateCast<int32, Arg1>(pg_func_info.llvm_args[1])),
                      llvm_out_value_ptr);
     // set the content of llvm_is_set_ptr to true, so that we do not need to
     // execute the code of non-strict built-in function
@@ -246,11 +246,11 @@ class PGArithFuncGenerator {
     // arg1_is_null_block
     // ------------------
     // arg0 is not NULL, but arg1 is NULL
-    // Generate code for PG_RETURN_INT64(val), where val = arg1
+    // Generate code for PG_RETURN_INT64(val), where val = arg0
     irb->SetInsertPoint(arg1_is_null_block);
 
-    irb->CreateStore(codegen_utils->CreateCast<int64, Arg1>(
-        pg_func_info.llvm_args[1]),
+    irb->CreateStore(codegen_utils->CreateCast<int64, Arg0>(
+        pg_func_info.llvm_args[0]),
                      llvm_out_value_ptr);
     // set the content of llvm_is_set_ptr to true, so that we do not need to
     // execute the code of non-strict built-in function

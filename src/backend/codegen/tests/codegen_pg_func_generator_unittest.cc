@@ -167,19 +167,19 @@ TEST_F(CodegenPGFuncGeneratorTest, PGFuncArgPreProcessorTest ) {
       true));
   EXPECT_EQ(nullptr, codegen_utils_->module());
 }
-/*
-// Test PGGenericFuncGenerator with 2 arguments in a non-strict function
+
+// Test PGGenericFuncGenerator with 2 arguments in a strict function
 TEST_F(CodegenPGFuncGeneratorTest,
        PGGenericFuncGeneratorNonStrictFuncTwoArgsTest) {
-  using Int4Fn = int64_t (*) (Datum, Datum, bool, bool);
+  using AddFn = Datum (*) (Datum, Datum, bool, bool);
 
-  llvm::Function* int4_sum_fn =
-      codegen_utils_->CreateFunction<Int4Fn>("int4_sum_fn");
+  llvm::Function* sum_fn =
+      codegen_utils_->CreateFunction<AddFn>("sum_fn");
 
   llvm::BasicBlock* main_block =
-      codegen_utils_->CreateBasicBlock("main", int4_sum_fn);
+      codegen_utils_->CreateBasicBlock("main", sum_fn);
   llvm::BasicBlock* error_block =
-      codegen_utils_->CreateBasicBlock("error", int4_sum_fn);
+      codegen_utils_->CreateBasicBlock("error", sum_fn);
 
   auto irb = codegen_utils_->ir_builder();
 
@@ -195,15 +195,15 @@ TEST_F(CodegenPGFuncGeneratorTest,
 
   llvm::Value* result;
   std::vector<llvm::Value*> args = {
-      ArgumentByPosition(int4_sum_fn, 0),
-      ArgumentByPosition(int4_sum_fn, 1)};
+      ArgumentByPosition(sum_fn, 0),
+      ArgumentByPosition(sum_fn, 1)};
   std::vector<llvm::Value*> args_isNull = {
-      ArgumentByPosition(int4_sum_fn, 2),
-      ArgumentByPosition(int4_sum_fn, 3)};
+      ArgumentByPosition(sum_fn, 2),
+      ArgumentByPosition(sum_fn, 3)};
   llvm::Value* llvm_isNull = irb->CreateAlloca(
           codegen_utils_->GetType<bool>(), nullptr, "isNull");
     irb->CreateStore(codegen_utils_->GetConstant<bool>(false), llvm_isNull);
-    PGFuncGeneratorInfo pg_gen_info(int4_sum_fn, error_block, args,
+    PGFuncGeneratorInfo pg_gen_info(sum_fn, error_block, args,
         args_isNull, llvm_isNull);
 
   EXPECT_TRUE(generator->GenerateCode(codegen_utils_.get(),
@@ -211,10 +211,10 @@ TEST_F(CodegenPGFuncGeneratorTest,
   irb->CreateRet(result);
 
   irb->SetInsertPoint(error_block);
-  irb->CreateRet(codegen_utils_->GetConstant<double>(0.0));
+  irb->CreateRet(codegen_utils_->GetConstant<Datum>(0));
 
 
-  EXPECT_FALSE(llvm::verifyFunction(*int4_sum_fn));
+  EXPECT_FALSE(llvm::verifyFunction(*sum_fn));
   EXPECT_FALSE(llvm::verifyModule(*codegen_utils_->module()));
 
   // Prepare generated code for execution.
@@ -223,85 +223,62 @@ TEST_F(CodegenPGFuncGeneratorTest,
       true));
   EXPECT_EQ(nullptr, codegen_utils_->module());
 
-  Int4Fn fn = codegen_utils_->GetFunctionPointer<Int4Fn>("int4_sum_fn");
+  AddFn fn = codegen_utils_->GetFunctionPointer<AddFn>("sum_fn");
 
-  int64_t d1 = 1;
-  int32_t d2 = 2;
-  bool d1_isNull = false, d2_isNull = false;
-  EXPECT_EQ(3, fn(*reinterpret_cast<Datum*>(&d1),
-                  *reinterpret_cast<Datum*>(&d2),
-                  *reinterpret_cast<bool*>(&d1_isNull),
-                  *reinterpret_cast<bool*>(&d2_isNull)));
-
-  d1_isNull = false, d2_isNull = true;
-  EXPECT_EQ(1, fn(*reinterpret_cast<Datum*>(&d1),
-                  *reinterpret_cast<Datum*>(&d2),
-                  *reinterpret_cast<bool*>(&d1_isNull),
-                  *reinterpret_cast<bool*>(&d2_isNull)));
-
-  d1_isNull = true, d2_isNull = false;
-  EXPECT_EQ(2, fn(*reinterpret_cast<Datum*>(&d1),
-                  *reinterpret_cast<Datum*>(&d2),
-                  *reinterpret_cast<bool*>(&d1_isNull),
-                  *reinterpret_cast<bool*>(&d2_isNull)));
-
-  d1_isNull = true, d2_isNull = true;
-  EXPECT_EQ(0, fn(*reinterpret_cast<Datum*>(&d1),
-                  *reinterpret_cast<Datum*>(&d2),
-                  *reinterpret_cast<bool*>(&d1_isNull),
-                  *reinterpret_cast<bool*>(&d2_isNull)));
+  Datum d1 = 1, d2 = 2;
+  EXPECT_EQ(3, fn(d1, d2, false, false));
+  EXPECT_EQ(2, fn(d1, d2, true, false));
+  EXPECT_EQ(1, fn(d1, d2, false, true));
+  EXPECT_EQ(0, fn(d1, d2, true, true));
 }
-*/
+
 // Test PGGenericFuncGenerator with 2 arguments in a strict function
 TEST_F(CodegenPGFuncGeneratorTest,
        PGGenericFuncGeneratorStrictFuncTwoArgsTest) {
-  using DoubleFn = double (*) (Datum, Datum, bool, bool);
+  using AddFn = Datum (*) (Datum, Datum, bool, bool);
 
-  llvm::Function* double_add_fn =
-      codegen_utils_->CreateFunction<DoubleFn>("double_add_fn");
+  llvm::Function* add_fn =
+      codegen_utils_->CreateFunction<AddFn>("add_fn");
 
   llvm::BasicBlock* main_block =
-      codegen_utils_->CreateBasicBlock("main", double_add_fn);
+      codegen_utils_->CreateBasicBlock("main", add_fn);
   llvm::BasicBlock* error_block =
-      codegen_utils_->CreateBasicBlock("error", double_add_fn);
+      codegen_utils_->CreateBasicBlock("error", add_fn);
 
   auto irb = codegen_utils_->ir_builder();
 
   irb->SetInsertPoint(main_block);
 
   auto generator = std::unique_ptr<PGFuncGeneratorInterface>(
-      new PGGenericFuncGenerator<float8, float8, float8>(
-          218,
-          "float8pl",
-          &PGArithFuncGenerator<float8, float8, float8>::AddWithOverflow,
+      new PGGenericFuncGenerator<int64_t, int64_t, int64_t>(
+          463,
+          "int8pl",
+          &PGArithFuncGenerator<int64_t, int64_t, int64_t>::AddWithOverflow,
           nullptr,
           true));
 
   llvm::Value* result;
   std::vector<llvm::Value*> args = {
-		  ArgumentByPosition(double_add_fn, 0),
-		  ArgumentByPosition(double_add_fn, 1)};
+		  ArgumentByPosition(add_fn, 0),
+		  ArgumentByPosition(add_fn, 1)};
   std::vector<llvm::Value*> args_isNull = {
-		  ArgumentByPosition(double_add_fn, 2),
-		  ArgumentByPosition(double_add_fn, 3)};
+		  ArgumentByPosition(add_fn, 2),
+		  ArgumentByPosition(add_fn, 3)};
   llvm::Value* llvm_isNull = irb->CreateAlloca(
           codegen_utils_->GetType<bool>(), nullptr, "isNull");
     irb->CreateStore(codegen_utils_->GetConstant<bool>(false), llvm_isNull);
-    PGFuncGeneratorInfo pg_gen_info(double_add_fn, error_block, args,
+    PGFuncGeneratorInfo pg_gen_info(add_fn, error_block, args,
     		args_isNull, llvm_isNull);
-
-  codegen_utils_->CreateElog(INFO, "ArgumentByPosition(double_add_fn, 2) = %d", ArgumentByPosition(double_add_fn, 2));
-  codegen_utils_->CreateElog(INFO, "ArgumentByPosition(double_add_fn, 3) = %d", ArgumentByPosition(double_add_fn, 3));
 
   EXPECT_TRUE(generator->GenerateCode(codegen_utils_.get(),
                                       pg_gen_info, &result));
   irb->CreateRet(result);
 
   irb->SetInsertPoint(error_block);
-  irb->CreateRet(codegen_utils_->GetConstant<double>(0.0));
+  irb->CreateRet(codegen_utils_->GetConstant<Datum>(0));
 
 
-  EXPECT_FALSE(llvm::verifyFunction(*double_add_fn));
+  EXPECT_FALSE(llvm::verifyFunction(*add_fn));
   EXPECT_FALSE(llvm::verifyModule(*codegen_utils_->module()));
 
   // Prepare generated code for execution.
@@ -310,33 +287,13 @@ TEST_F(CodegenPGFuncGeneratorTest,
       true));
   EXPECT_EQ(nullptr, codegen_utils_->module());
 
-  DoubleFn fn = codegen_utils_->GetFunctionPointer<DoubleFn>("double_add_fn");
+  AddFn fn = codegen_utils_->GetFunctionPointer<AddFn>("add_fn");
 
-  double d1 = 1.0, d2 = 2.0;
-  bool d1_isNull = false, d2_isNull = false;
-  EXPECT_EQ(3.0, fn(*reinterpret_cast<Datum*>(&d1),
-                    *reinterpret_cast<Datum*>(&d2),
-                    *reinterpret_cast<bool*>(&d1_isNull),
-                    *reinterpret_cast<bool*>(&d2_isNull)));
-
-  d1_isNull = false, d2_isNull = true;
-  double *d1_ptr = nullptr;
-  EXPECT_EQ(0.0, fn(*d1_ptr,
-                    *reinterpret_cast<Datum*>(&d2),
-                    d1_isNull,
-                    d2_isNull));
-
-  d1_isNull = true, d2_isNull = false;
-  EXPECT_EQ(0.0, fn(*reinterpret_cast<Datum*>(&d1),
-                    *reinterpret_cast<Datum*>(&d2),
-                    *reinterpret_cast<bool*>(&d1_isNull),
-                    *reinterpret_cast<bool*>(&d2_isNull)));
-
-  d1_isNull = true, d2_isNull = true;
-  EXPECT_EQ(0.0, fn(*reinterpret_cast<Datum*>(&d1),
-                    *reinterpret_cast<Datum*>(&d2),
-                    *reinterpret_cast<bool*>(&d1_isNull),
-                    *reinterpret_cast<bool*>(&d2_isNull)));
+  Datum d1 = 1, d2 = 2;
+  EXPECT_EQ(3, fn(d1, d2, false, false));
+  EXPECT_EQ(0, fn(d1, d2, true, false));
+  EXPECT_EQ(0, fn(d1, d2, false, true));
+  EXPECT_EQ(0, fn(d1, d2, true, true));
 }
 
 // A method of type PGFuncGenerator as expected by PGGenericFuncGenerator
@@ -354,7 +311,7 @@ bool GenerateAddOne(
 
 // Test PGGenericFuncGenerator with 1 arguments
 TEST_F(CodegenPGFuncGeneratorTest, PGGenericFuncGeneratorOneArgTest) {
-  using AddOneFn = int32_t (*) (Datum);
+  using AddOneFn = Datum (*) (Datum);
 
   llvm::Function* add_one_fn =
       codegen_utils_->CreateFunction<AddOneFn>("add_one_fn");
@@ -392,7 +349,7 @@ TEST_F(CodegenPGFuncGeneratorTest, PGGenericFuncGeneratorOneArgTest) {
   irb->CreateRet(result);
 
   irb->SetInsertPoint(error_block);
-  irb->CreateRet(codegen_utils_->GetConstant<int32_t>(-1));
+  irb->CreateRet(codegen_utils_->GetConstant<Datum>(-1));
 
 
   EXPECT_FALSE(llvm::verifyFunction(*add_one_fn));

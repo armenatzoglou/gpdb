@@ -234,15 +234,14 @@ bool OpExprTreeGenerator::GenerateCode(GpCodegenUtils* codegen_utils,
                                        llvm::Value** llvm_out_value) {
   assert(nullptr != llvm_out_value);
   *llvm_out_value = nullptr;
-  auto irb = codegen_utils->ir_builder();
   OpExpr* op_expr = reinterpret_cast<OpExpr*>(expr_state()->expr);
-  int op_id = op_expr->opfuncid;
-  CodeGenFuncMap::iterator itr =  supported_function_.find(op_id);
+  CodeGenFuncMap::iterator itr =  supported_function_.find(op_expr->opfuncid);
+  auto irb = codegen_utils->ir_builder();
 
   if (itr == supported_function_.end()) {
     // Operators are stored in pg_proc table.
     // See postgres.bki for more details.
-    elog(WARNING, "Unsupported operator %d.", op_id);
+    elog(WARNING, "Unsupported operator %d.", op_expr->opfuncid);
     return false;
   }
 
@@ -250,67 +249,21 @@ bool OpExprTreeGenerator::GenerateCode(GpCodegenUtils* codegen_utils,
   PGFuncGeneratorInterface* pg_func_interface = itr->second.get();
   assert(nullptr != pg_func_interface);
 
-  llvm::Value* llvm_op_value = nullptr;
-
-  // Blocks that will be used if function is strict for examining NULL cases.
-  // Block for generating the code of the function.
-  llvm::BasicBlock* generate_function_block = nullptr;
-  // Block that returns (Datum) 0 if there is NULL argument.
-  llvm::BasicBlock* null_argument_block = nullptr;
-  // Block that sets the final value of the result.
-  llvm::BasicBlock* set_llvm_out_value_block = nullptr;
-  // Block that continues the implementation of the caller.
-  llvm::BasicBlock* continue_to_parent_node_block = nullptr;
-  // Block that includes code which implements the current argument during
-  // the iteration over all arguments.
-  llvm::BasicBlock* current_arrgument_block = nullptr;
-  // Block that will include the code for the next argument.
-  llvm::BasicBlock* next_argument_block = nullptr;
-
-  // Create the blocks only if function is strict
-  if (pg_func_interface->IsStrict() && arguments_.size() > 0) {
-    generate_function_block = codegen_utils->CreateBasicBlock(
-        "generate_function_block_opid_"+ std::to_string(op_id),
-        gen_info.llvm_main_func);
-    null_argument_block = codegen_utils->CreateBasicBlock(
-        "null_argument_block_opid_"+ std::to_string(op_id),
-        gen_info.llvm_main_func);
-    set_llvm_out_value_block = codegen_utils->CreateBasicBlock(
-        "set_llvm_out_value_block_opid_"+ std::to_string(op_id),
-        gen_info.llvm_main_func);
-    continue_to_parent_node_block = codegen_utils->CreateBasicBlock(
-            "continue_to_parent_node_block_opid_"+ std::to_string(op_id),
-            gen_info.llvm_main_func);
-
-    current_arrgument_block = codegen_utils->CreateBasicBlock(
-        "argument_0_block_opid_"+ std::to_string(op_id),
-        gen_info.llvm_main_func);
-
-    irb->CreateBr(current_arrgument_block);
-  }
-
   if (arguments_.size() != pg_func_interface->GetTotalArgCount()) {
     elog(WARNING, "Expected argument size to be %lu\n",
          pg_func_interface->GetTotalArgCount());
     return false;
   }
   bool arg_generated = true;
+
   std::vector<llvm::Value*> llvm_arguments;
   std::vector<llvm::Value*> llvm_arguments_isNull;
-  int argnum = 0;
   for (auto& arg : arguments_) {
-    if (pg_func_interface->IsStrict()) {
-      // -------- Current Argument Block ------- //
-      irb->SetInsertPoint(current_arrgument_block);
-
-      next_argument_block = codegen_utils->CreateBasicBlock(
-                "argument_" + std::to_string(argnum+1) + "_block_opid_"+ std::to_string(op_id),
-                gen_info.llvm_main_func);
-    }
 
     llvm::Value* llvm_arg_isNull_ptr = irb->CreateAlloca(
-            codegen_utils->GetType<bool>(), nullptr, "isNull");
-     irb->CreateStore(codegen_utils->GetConstant<bool>(false), llvm_arg_isNull_ptr);
+        codegen_utils->GetType<bool>(), nullptr, "isNull");
+    irb->CreateStore(codegen_utils->GetConstant<bool>(false),
+                     llvm_arg_isNull_ptr);
 
     llvm::Value* llvm_arg = nullptr;
     arg_generated &= arg->GenerateCode(codegen_utils,
@@ -323,24 +276,6 @@ bool OpExprTreeGenerator::GenerateCode(GpCodegenUtils* codegen_utils,
     }
     llvm_arguments.push_back(llvm_arg);
     llvm_arguments_isNull.push_back(irb->CreateLoad(llvm_arg_isNull_ptr));
-    argnum++;
-
-    if (pg_func_interface->IsStrict()) {
-      irb->CreateCondBr(
-          irb->CreateLoad(llvm_arg_isNull_ptr),
-          null_argument_block, /* true */
-          next_argument_block /* false */);
-
-      current_arrgument_block = next_argument_block;
-    }
-
-  }
-
-  if (pg_func_interface->IsStrict()) {
-    irb->SetInsertPoint(next_argument_block);
-    irb->CreateBr(generate_function_block);
-
-    irb->SetInsertPoint(generate_function_block);
   }
 
   PGFuncGeneratorInfo pg_func_info(gen_info.llvm_main_func,
@@ -348,44 +283,11 @@ bool OpExprTreeGenerator::GenerateCode(GpCodegenUtils* codegen_utils,
                                    llvm_arguments,
                                    llvm_arguments_isNull,
                                    llvm_isnull_ptr);
+
   bool retval = pg_func_interface->GenerateCode(codegen_utils,
                                                 pg_func_info,
-                                                &llvm_op_value);
+                                                llvm_out_value);
 
-  // convert return type to Datum
-  llvm::Value* llvm_out_value_tmp = codegen_utils->CreateCppTypeToDatumCast(llvm_op_value);
-
-  if (pg_func_interface->IsStrict()) {
-
-    llvm::BasicBlock* last_block = irb->GetInsertBlock();
-
-    irb->CreateBr(set_llvm_out_value_block);
-
-    irb->SetInsertPoint(null_argument_block);
-
-    //*isNull = true;
-    irb->CreateStore(
-        codegen_utils->GetConstant<bool>(true),
-        llvm_isnull_ptr);
-
-    irb->CreateBr(set_llvm_out_value_block);
-
-    irb->SetInsertPoint(set_llvm_out_value_block);
-
-    llvm::PHINode* llvm_out_value_phinode = irb->CreatePHI(
-        codegen_utils->GetType<Datum>(), 2);
-    //return (Datum) 0;
-    llvm_out_value_phinode->addIncoming(codegen_utils->GetConstant<Datum>(0),
-                                        null_argument_block);
-    llvm_out_value_phinode->addIncoming(llvm_out_value_tmp, last_block);
-
-    *llvm_out_value = llvm_out_value_phinode;
-
-    irb->CreateBr(continue_to_parent_node_block);
-
-    irb->SetInsertPoint(continue_to_parent_node_block);
-
-  }
-
+  assert((*llvm_out_value)->getType() == codegen_utils->GetType<Datum>());
   return retval;
 }
