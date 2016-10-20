@@ -89,6 +89,9 @@ s/\(SOMEFILE:SOMEFUNC\)//
 m/\(COptTasks\.cpp:\d+\)/
 s/\(COptTasks\.cpp:\d+\)//
 
+m/\(CGPOptimizer\.cpp:\d+\)/
+s/\(CGPOptimizer\.cpp:\d+\)//
+
 m/\(cdbdisp\.c:\d+\)/
 s/\(cdbdisp\.c:\d+\)//
 
