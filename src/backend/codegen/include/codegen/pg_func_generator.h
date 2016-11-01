@@ -285,6 +285,11 @@ class PGIRBuilderFuncGenerator
     llvm::BasicBlock* func_generation_last_block = irb->GetInsertBlock();
     assert(llvm_func_tmp_value->getType() ==
         codegen_utils->GetType<ReturnType>());
+    // If func_ptr_ needs to set this value, then we have pass this argument.
+    // We don't have this use case and hence we set here.
+    irb->CreateStore(
+              codegen_utils->GetConstant<bool>(false),
+              llvm_isnull_ptr);
     irb->CreateBr(set_llvm_out_value_block);
 
     // null_argument_block
@@ -502,6 +507,11 @@ class PGGenericFuncGenerator : public  PGFuncGeneratorInterface {
     llvm::BasicBlock* func_generation_last_block = irb->GetInsertBlock();
     assert(llvm_func_generation_tmp_value->getType() ==
            codegen_utils->GetType<ReturnType>());
+    // If func_ptr_ needs to set this value, then we have pass this argument.
+    // We don't have this use case and hence we set here.
+    irb->CreateStore(
+              codegen_utils->GetConstant<bool>(false),
+              llvm_isnull_ptr);
     irb->CreateBr(set_llvm_out_value_block);
 
     // set_llvm_out_value_block
