@@ -134,6 +134,9 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
       "final", exec_variable_list_func);
   llvm::BasicBlock* fallback_block = codegen_utils->CreateBasicBlock(
       "fallback", exec_variable_list_func);
+  // BasicBlock for checking memtuple type.
+  llvm::BasicBlock* memtuple_check_block = codegen_utils->CreateBasicBlock(
+      "memtuple_check_exec_var", exec_variable_list_func);
 
   // Generation-time constants
   llvm::Value* llvm_max_attr = codegen_utils->GetConstant(max_attr_);
@@ -188,9 +191,23 @@ bool ExecVariableListCodegen::GenerateExecVariableList(
 
   irb->CreateCondBr(
       irb->CreateICmpEQ(llvm_slot, llvm_slot_arg),
-      main_block /* true */,
+      memtuple_check_block /* true */,
       fallback_block /* false */);
 
+  // check if it is memtuple and fallback block
+  irb->SetInsertPoint(memtuple_check_block);
+
+  // slot->PRIVATE_tts_memtuple != NULL
+  llvm::Value* llvm_slot_PRIVATE_tts_memtuple =
+      irb->CreateLoad(codegen_utils->GetPointerToMember(
+          llvm_slot, &TupleTableSlot::PRIVATE_tts_memtuple));
+  llvm::Value* llvm_tuple_has_memtuple = irb->CreateICmpNE(
+      llvm_slot_PRIVATE_tts_memtuple,
+      codegen_utils->GetConstant((MemTuple) NULL));
+
+  irb->CreateCondBr(
+      llvm_tuple_has_memtuple,
+      fallback_block /*true*/, main_block /*false*/);
 
   // Main block
   // ----------
