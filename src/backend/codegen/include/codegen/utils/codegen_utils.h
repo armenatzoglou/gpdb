@@ -183,6 +183,9 @@ class CodegenUtils {
   template <typename ReturnType, typename... ArgumentTypes>
   llvm::FunctionType* GetFunctionType(const bool is_var_arg = false);
 
+  template <typename... MemberTypes>
+  llvm::StructType* GetStructType(const std::string& name = "");
+
   /**
    * @brief Get an LLVM constant based on a C++ value.
    *
@@ -587,12 +590,13 @@ class CodegenUtils {
   // Generate a unique name for an external function.
   std::string GenerateExternalFunctionName();
 
+ public:
   // Helper method for GetPointerToMember(). This base version does the actual
   // address computation and casting.
   llvm::Value* GetPointerToMemberImpl(llvm::Value* base_ptr,
                                       llvm::Type* cast_type,
                                       const std::size_t cumulative_offset);
-
+private:
   // Helper method to call any llvm intrinsic feature. E.g. CreateMulOverflow.
   // TODO(krajaramn) : Support any number of arguments
   llvm::Value* CreateIntrinsicInstrCall(llvm::Intrinsic::ID Id,
@@ -952,6 +956,17 @@ llvm::FunctionType* CodegenUtils::GetFunctionType(const bool is_var_arg) {
                                  is_var_arg);
 }
 
+template <typename... MemberTypes>
+llvm::StructType* CodegenUtils::GetStructType(const std::string& name) {
+  std::vector<llvm::Type*> argument_types;
+    codegen_utils_detail::TypeVectorBuilder<MemberTypes...>::AppendTypes(
+        this,
+        &argument_types);
+    return llvm::StructType::create(context_,
+                                   argument_types,
+                                   name);
+}
+
 // ----------------------------------------------------------------------------
 // Implementation of CodegenUtils::GetConstant().
 
@@ -1258,31 +1273,37 @@ std::is_integral<UnsignedIntType>::value
                                         llvm::Value* arg0,
                                         llvm::Value* arg1) {
     Checker(generator->GetType<UnsignedIntType>(), arg0, arg1);
-    return generator->CreateIntrinsicInstrCall(
+    llvm::Value* result =  generator->CreateIntrinsicInstrCall(
         llvm::Intrinsic::uadd_with_overflow,
         generator->GetType<UnsignedIntType>(),
         arg0,
         arg1);
+
+    return CreateStruct(generator, result);
   }
   static llvm::Value* CreateSubOverflow(CodegenUtils* generator,
                                         llvm::Value* arg0,
                                         llvm::Value* arg1) {
     Checker(generator->GetType<UnsignedIntType>(), arg0, arg1);
-    return generator->CreateIntrinsicInstrCall(
+    llvm::Value* result = generator->CreateIntrinsicInstrCall(
         llvm::Intrinsic::usub_with_overflow,
         generator->GetType<UnsignedIntType>(),
         arg0,
         arg1);
+
+    return CreateStruct(generator, result);
   }
   static llvm::Value* CreateMulOverflow(CodegenUtils* generator,
                                         llvm::Value* arg0,
                                         llvm::Value* arg1) {
     Checker(generator->GetType<UnsignedIntType>(), arg0, arg1);
-    return generator->CreateIntrinsicInstrCall(
+    llvm::Value* result = generator->CreateIntrinsicInstrCall(
         llvm::Intrinsic::umul_with_overflow,
         generator->GetType<UnsignedIntType>(),
         arg0,
         arg1);
+
+    return CreateStruct(generator, result);
   }
 
  private:
@@ -1298,6 +1319,32 @@ std::is_integral<UnsignedIntType>::value
     assert(arg1->getType()->getScalarSizeInBits() ==
             llvm_unsigned_type->getScalarSizeInBits());
   }
+
+  static llvm::Value* CreateStruct(CodegenUtils* generator, llvm::Value* llvm_result) {
+
+    auto irb = generator->ir_builder();
+    llvm::Value* llvm_struct_a_ptr = irb->CreateAlloca(generator->GetStructType<UnsignedIntType, bool>(),
+                                                       nullptr,
+                                                       "struct_result");
+    llvm::Value* llvm_struct_a = irb->CreateLoad(llvm_struct_a_ptr);
+
+
+    llvm::Value* llvm_int_ptr = irb->CreateInBoundsGEP(llvm_struct_a_ptr->getType(),
+                                                       llvm_struct_a_ptr,
+                                                       {generator->GetConstant(0),
+                                                           generator->GetConstant(0)});
+    irb->CreateStore(irb->CreateExtractValue(llvm_result, 0), llvm_int_ptr);
+
+    llvm::Value* llvm_bool_ptr = irb->CreateInBoundsGEP(llvm_struct_a_ptr->getType(),
+                                                        llvm_struct_a_ptr,
+                                                        {generator->GetConstant(0),
+                                                            generator->GetConstant(1)});
+
+    irb->CreateStore(irb->CreateExtractValue(llvm_result, 1), llvm_bool_ptr);
+    return llvm_struct_a_ptr;
+
+  }
+
 };
 
 // Partial specialization for signed integer types.
@@ -1312,33 +1359,36 @@ std::is_integral<SignedIntType>::value
                                         llvm::Value* arg0,
                                         llvm::Value* arg1) {
     Checker(generator->GetType<SignedIntType>(), arg0, arg1);
-    return generator->CreateIntrinsicInstrCall(
+    llvm::Value* result =  generator->CreateIntrinsicInstrCall(
         llvm::Intrinsic::sadd_with_overflow,
         generator->GetType<SignedIntType>(),
         arg0,
         arg1);
+    return CreateStruct(generator, result);
   }
 
   static llvm::Value* CreateSubOverflow(CodegenUtils* generator,
                                         llvm::Value* arg0,
                                         llvm::Value* arg1) {
     Checker(generator->GetType<SignedIntType>(), arg0, arg1);
-    return generator->CreateIntrinsicInstrCall(
+    llvm::Value* result =  generator->CreateIntrinsicInstrCall(
         llvm::Intrinsic::ssub_with_overflow,
         generator->GetType<SignedIntType>(),
         arg0,
         arg1);
+    return CreateStruct(generator, result);
   }
 
   static llvm::Value* CreateMulOverflow(CodegenUtils* generator,
                                         llvm::Value* arg0,
                                         llvm::Value* arg1) {
     Checker(generator->GetType<SignedIntType>(), arg0, arg1);
-    return generator->CreateIntrinsicInstrCall(
+    llvm::Value* result =  generator->CreateIntrinsicInstrCall(
         llvm::Intrinsic::smul_with_overflow,
         generator->GetType<SignedIntType>(),
         arg0,
         arg1);
+    return CreateStruct(generator, result);
   }
  private:
   static void Checker(llvm::Type* llvm_signed_type,
@@ -1353,6 +1403,31 @@ std::is_integral<SignedIntType>::value
     assert(arg1->getType()->getScalarSizeInBits() ==
             llvm_signed_type->getScalarSizeInBits());
   }
+
+  static llvm::Value* CreateStruct(CodegenUtils* generator, llvm::Value* llvm_result) {
+
+      auto irb = generator->ir_builder();
+      llvm::Value* llvm_struct_a_ptr = irb->CreateAlloca(generator->GetStructType<SignedIntType, bool>(),
+                                                         nullptr,
+                                                         "struct_result");
+      llvm::Value* llvm_struct_a = irb->CreateLoad(llvm_struct_a_ptr);
+
+
+      llvm::Value* llvm_int_ptr = irb->CreateInBoundsGEP(llvm_struct_a_ptr->getType(),
+                                                         llvm_struct_a_ptr,
+                                                         {generator->GetConstant(0),
+                                                             generator->GetConstant(0)});
+      irb->CreateStore(irb->CreateExtractValue(llvm_result, 0), llvm_int_ptr);
+
+      llvm::Value* llvm_bool_ptr = irb->CreateInBoundsGEP(llvm_struct_a_ptr->getType(),
+                                                          llvm_struct_a_ptr,
+                                                          {generator->GetConstant(0),
+                                                              generator->GetConstant(1)});
+
+      irb->CreateStore(irb->CreateExtractValue(llvm_result, 1), llvm_bool_ptr);
+      return llvm_struct_a_ptr;
+
+    }
 };
 
 // Partial specialization for enums (mapped to the underlying integer type).
@@ -1395,9 +1470,30 @@ class ArithOpMaker<double> {
                                         llvm::Value* arg0,
                                         llvm::Value* arg1) {
     Checker(arg0, arg1);
-
+    auto irb = generator->ir_builder();
     // TODO(armenatzoglou) Support overflow
-    return generator->ir_builder()->CreateFMul(arg0, arg1);
+    //return generator->ir_builder()->CreateFMul(arg0, arg1);
+    llvm::Value* llvm_result = irb->CreateFMul(arg0, arg1);
+
+    llvm::Value* llvm_arg0_zero = irb->CreateICmpEQ(arg0,
+                                                    generator->GetConstant(0),
+                                                    "is_arg0_zero");
+    llvm::Value* llvm_arg1_zero = irb->CreateICmpEQ(arg1,
+                                                    generator->GetConstant(0),
+                                                    "is_arg1_zero");
+    llvm::Value* llvm_zero_valid = irb->CreateOr(llvm_arg0_zero,
+                                                 llvm_arg1_zero,
+                                                 "llvm_zero_valid");
+    llvm::Function* llvm_float_overflow_func =
+        generator->GetOrRegisterExternalFunction(
+            CheckDoubleVal, "CheckDoubleVal");
+
+    llvm::Value* llvm_overflow = irb->CreateCall(llvm_float_overflow_func,
+                                                 {llvm_result,
+                                                     arg0,
+                                                     arg1,
+                                                     llvm_zero_valid});
+    return llvm_result;
   }
 
 
@@ -1408,6 +1504,21 @@ class ArithOpMaker<double> {
     assert(nullptr != arg1 && nullptr != arg1->getType());
     assert(arg0->getType()->isDoubleTy());
     assert(arg1->getType()->isDoubleTy());
+  }
+
+  // This implementation is similar to CHECKFLOATVAL in GPDB(float_utils.h).
+  static bool CheckDoubleVal(double val,
+                            double arg0,
+                            double arg1,
+                            bool zero_is_valid) {
+    //assert(std::is_floating_point<ValueType>::value);
+    bool inf_is_valid = isinf(arg0) || isinf(arg1);
+    if (isinf(val) && !(inf_is_valid))
+      return true;
+
+    if ((val) == 0.0 && !(zero_is_valid)) {
+      return true;
+    }
   }
 };
 

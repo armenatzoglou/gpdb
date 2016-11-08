@@ -10,7 +10,7 @@
 //    functionality to pass any errors to GPDB.
 //
 //---------------------------------------------------------------------------
-
+#include <iostream>
 #ifdef CODEGEN_GPDB_ASSERT_HANDLING
 extern "C" {
 #include <utils/elog.h>
@@ -37,10 +37,12 @@ void __assert_fail(const char * expr,
     func = "";
   }
 
-  errstart(ERROR, file, line, func, TEXTDOMAIN);
+  /*errstart(ERROR, file, line, func, TEXTDOMAIN);
   errfinish(errcode(ERRCODE_INTERNAL_ERROR),
             errmsg("C++ assertion failed: \"%s\"",
-            expr));
+            expr));*/
+  std::cerr << "file " << file << " line " << line << std::endl;
+  std::cerr << expr << std::endl;
 
   // Normal execution beyond this point is unsafe
 }

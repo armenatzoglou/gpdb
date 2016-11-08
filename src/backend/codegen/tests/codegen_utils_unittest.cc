@@ -1255,6 +1255,48 @@ class CodegenUtilsTest : public ::testing::Test {
     delete[] output_array;
   }
 
+  template <typename ReturnType>
+  void CheckStructCreate(const std::string& func_name,
+                         unsigned int return_idx) {
+    auto irb = codegen_utils_->ir_builder();
+    llvm::Function* create_struct_fn =
+        codegen_utils_->CreateFunction<ReturnType(*)(int32_t, bool)>(
+            func_name);
+    irb->SetInsertPoint(codegen_utils_->CreateBasicBlock(
+        "main", create_struct_fn));
+    llvm::StructType* struct_type = codegen_utils_->
+        GetStructType<int32_t, bool>("Tuple_int_bool");
+    ASSERT_TRUE(struct_type != nullptr);
+    llvm::Value* llvm_int_val = ArgumentByPosition(
+        create_struct_fn, 0);
+    llvm::Value* llvm_bool_val = ArgumentByPosition(
+        create_struct_fn, 1);
+    llvm::Value* llvm_struct_a_ptr = irb->CreateAlloca(struct_type,
+                                                       nullptr,
+                                                       "struct_a");
+    llvm::Value* llvm_struct_a = irb->CreateLoad(llvm_struct_a_ptr);
+
+
+    llvm::Value* llvm_int_ptr = irb->CreateInBoundsGEP(struct_type,
+                                                       llvm_struct_a_ptr,
+                                                       {codegen_utils_->GetConstant(0),
+                                                       codegen_utils_->GetConstant(0)});
+    irb->CreateStore(llvm_int_val, llvm_int_ptr);
+
+    llvm::Value* llvm_bool_ptr = irb->CreateInBoundsGEP(struct_type,
+                                                        llvm_struct_a_ptr,
+                                                        {codegen_utils_->GetConstant(0),
+                                                            codegen_utils_->GetConstant(1)});
+
+    irb->CreateStore(llvm_bool_val, llvm_bool_ptr);
+    irb->CreateRet( irb->CreateLoad(irb->CreateInBoundsGEP(struct_type,
+                                                           llvm_struct_a_ptr,
+                                                           {codegen_utils_->GetConstant(0),
+                                                               codegen_utils_->GetConstant(return_idx)})));
+
+    create_struct_fn->dump();
+  }
+
   std::unique_ptr<CodegenUtils> codegen_utils_;
 };
 
@@ -2928,6 +2970,34 @@ TEST_F(CodegenUtilsTest, InlineFunctionTest) {
   EXPECT_TRUE(nullptr != compiled_add_two_fn);
   EXPECT_EQ(compiled_add_two_fn(5), 7);
   EXPECT_EQ(compiled_add_two_fn(-5), -3);
+}
+
+// Test InlineFunction
+/*
+ * codegen_utils->CreateTupleStruct<int32_t, bool>(llvm_val0, llvm_val1);
+ * check CraeteExtractValue returns right value.
+ * template <ReturnType, MemberTypes....>
+ * ReturnType GetMember(int element_idx, MemberTypes V...)
+ */
+TEST_F(CodegenUtilsTest, StructFunctionTest) {
+  auto irb = codegen_utils_->ir_builder();
+
+  CheckStructCreate<int32_t>("CheckIntStructCreate", 0);
+  CheckStructCreate<bool>("CheckBoolStructCreate", 1);
+  using CheckIntStructLLVMFunc = int32_t (*)(int32_t, bool);
+  using CheckBoolStructLLVMFunc = bool (*)(int32_t, bool);
+
+  // Compiled module
+  EXPECT_TRUE(codegen_utils_->PrepareForExecution(
+      CodegenUtils::OptimizationLevel::kNone, false));
+  CheckIntStructLLVMFunc compiled_int_struct_fn =
+      codegen_utils_->GetFunctionPointer<CheckIntStructLLVMFunc>("CheckIntStructCreate");
+  CheckBoolStructLLVMFunc compiled_bool_struct_fn =
+        codegen_utils_->GetFunctionPointer<CheckBoolStructLLVMFunc>("CheckBoolStructCreate");
+
+  EXPECT_EQ(42, compiled_int_struct_fn(42, false));
+  EXPECT_EQ(false, compiled_bool_struct_fn(42, false));
+  EXPECT_EQ(true, compiled_bool_struct_fn(42, true));
 }
 
 
