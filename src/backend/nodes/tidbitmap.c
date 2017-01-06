@@ -1075,6 +1075,15 @@ tbm_comparator(const void *left, const void *right)
 static void
 opstream_free(StreamNode *self)
 {
+	ereport(LOG, (errmsg("opstream_free: %x", self), errprintstack(true)));
+	elog(INFO, "try to opstream_free: %x", self);
+
+	if (!self->tofree)
+		return;
+
+	self->tofree = false;
+
+	elog(INFO, "opstream_free executed: %x", self);
 	ListCell   *cell;
 
 	foreach(cell, self->input)
@@ -1132,6 +1141,10 @@ make_opstream(StreamType kind, StreamNode *n1, StreamNode *n2)
 	op->free = opstream_free;
 	op->set_instrument = opstream_set_instrument;
 	op->upd_instrument = opstream_upd_instrument;
+	op->tofree = true;
+
+	elog(INFO, "make_opstream: %x", op);
+
 	return (void *) op;
 }
 
