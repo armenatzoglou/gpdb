@@ -214,6 +214,8 @@ bmgetmulti(PG_FUNCTION_ARGS)
 		is->set_instrument = NULL;
 		is->upd_instrument = NULL;
 
+		elog(INFO, "bmgetmulti, IndexStream = : %x, %d", is, is->type);
+
 		/* create a memory context for the stream */
 
 		so = palloc(sizeof(BMStreamOpaque));
@@ -614,9 +616,12 @@ stream_free(StreamNode *self)
 	IndexStream *is = self;
 	BMStreamOpaque *so = (BMStreamOpaque *)is->opaque;
 
+	//elog(INFO, "stream_free, self = %x", self);
+
 	/* opaque may be NULL */
 	if (so)
 	{
+//		elog(INFO, "stream_free, so = %x", so);
 		IndexScanDesc scan = so->scan;
 		BMScanOpaque s = (BMScanOpaque)scan->opaque;
 
@@ -636,6 +641,7 @@ stream_free(StreamNode *self)
 
 		if (so->entry != NULL)
 			pfree(so->entry);
+
 
 		pfree(s);
 		pfree(scan);
