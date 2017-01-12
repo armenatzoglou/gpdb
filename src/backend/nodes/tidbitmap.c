@@ -1071,6 +1071,55 @@ tbm_comparator(const void *left, const void *right)
 /*
  * functions related to streaming
  */
+/*
+static bool
+isBitmapplan(PlanState *node, StreamNode snode) {
+
+	if (NULL == node || NULL == snode || IsA(node, BitmapIndexScanState))
+	{
+		return false;
+	}
+
+	if (IsA(node, BitmapAndState))
+	{
+		BitmapAndState *nodeAnd = (BitmapAndState *) node;
+		for (i = 0; i < nodeAnd->nplans; i++)
+		{
+			PlanState  *subnode = NULL;
+			subnode = nodeAnd->bitmapplans[i];
+
+			if (nodeAnd->bitmap && IsA(nodeAnd->bitmap, StreamBitmap))
+			{
+				if (snode == ((StreamBitmap *)nodeAnd->bitmap)->streamNode)
+				{
+					elog(INFO, "snode = %x is in bitmapplan off And: %x", snode, ((StreamBitmap *)nodeAnd->bitmap)->streamNode);
+					return true;
+				}
+			}
+		}
+	}
+	else if (IsA(node, BitmapOrState))
+	{
+		BitmapOrState *nodeOr = (BitmapOrState *) node;
+		for (i = 0; i < nodeOr->nplans; i++)
+		{
+			PlanState  *subnode = NULL;
+			subnode = nodeOr->bitmapplans[i];
+
+			if (nodeOr->bitmap && IsA(nodeOr->bitmap, StreamBitmap))
+			{
+				if (snode == ((StreamBitmap *)nodeOr->bitmap)->streamNode)
+				{
+					elog(INFO, "snode = %x is in bitmapplan off Or: %x", snode, ((StreamBitmap *)nodeOr->bitmap)->streamNode);
+					return true;
+				}
+			}
+		}
+	}
+	//elog(INFO, "snode = %x is NOT in bitmapplan", snode);
+	return false;
+}
+*/
 
 static void
 opstream_free(StreamNode *self)
