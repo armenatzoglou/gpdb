@@ -34,6 +34,7 @@
 #include "executor/nodeBitmapOr.h"
 #include "miscadmin.h"
 #include "nodes/tidbitmap.h"
+#include "nodes/memnodes.h"
 
 
 /* ----------------------------------------------------------------
@@ -118,6 +119,9 @@ MultiExecBitmapOr(BitmapOrState *node)
 	int			nplans;
 	int			i;
 	HashBitmap *hbm = NULL;
+
+	char * name = CurrentMemoryContext->name;
+	elog(INFO, "MultiExecBitmapOr, memorycontext = %s", name);
 
 	/* must provide our own instrumentation support */
 	if (node->ps.instrument)

@@ -1124,20 +1124,48 @@ isBitmapplan(PlanState *node, StreamNode snode) {
 static void
 opstream_free(StreamNode *self)
 {
+	Assert(self->owner);
 	ListCell   *cell;
 	elog(INFO, "opstream_free, self = : %x, %d", self, self->type);
 	foreach(cell, self->input)
 	{
 
 		StreamNode *inp = (StreamNode *) lfirst(cell);
+		Assert(inp->owner);
 		elog(INFO, "\t opstream_free, list: %x, %d", inp, inp->type);
-		if (inp->free)
+		if (inp->free && self->owner == inp->owner)//  && !isBitmapplan(inp, node))
 			inp->free(inp);
 	}
 	list_free(self->input);
 	pfree(self);
 }
+/*
+Plan
+*And
+	*IDX // StreamNode -> This came from a BitmapIndexScan
+	*OR
+	    *IDX
+		*IDX
 
+
+	Actual
+*And
+|-	BIS -> OR //That was supposed to return a Bitmap. Instead it returned an OR // Return ??
+|			IDX1
+|			IDX2
+|-	*OR
+		*IDX
+		*IDX
+
+ExecEndAnd
+	ExecEndBIS -> tbm_free(or) -> Recurse to free IDX1, IDX2
+
+
+Regular Index and one StreamNode. And the StreamNode is the original perpetrator.
+
+We had a situation where we needed to combine two bitmaps witH OR. So, a plain bitmap suddenly
+became a StreamNode inside bmgetmulti.
+*/
 static void
 opstream_set_instrument(StreamNode *self, struct Instrumentation *instr)
 {
@@ -1182,6 +1210,7 @@ make_opstream(StreamType kind, StreamNode *n1, StreamNode *n2)
 	op->free = opstream_free;
 	op->set_instrument = opstream_set_instrument;
 	op->upd_instrument = opstream_upd_instrument;
+	op->owner = NULL;
 
 	elog(INFO, "make_opstream: %x, %d", op, op->type);
 	ereport(LOG, (errmsg("make_opstream: %x, %d", op, op->type), errprintstack(true)));
@@ -1197,6 +1226,7 @@ make_opstream(StreamType kind, StreamNode *n1, StreamNode *n2)
 void
 stream_add_node(StreamBitmap *sbm, StreamNode *node, StreamType kind)
 {
+	Assert(node->owner);
 	/* CDB: Tell node where to put its statistics for EXPLAIN ANALYZE. */
 	if (node->set_instrument)
 		node->set_instrument(node, sbm->instrument);
@@ -1219,6 +1249,7 @@ stream_add_node(StreamBitmap *sbm, StreamNode *node, StreamType kind)
 				 (n->type == BMS_INDEX))
 		{
 			sbm->streamNode = make_opstream(kind, sbm->streamNode, node);
+			sbm->streamNode->owner = sbm;
 		}
 		else
 			elog(ERROR, "unknown stream type %i", (int) n->type);
@@ -1228,7 +1259,10 @@ stream_add_node(StreamBitmap *sbm, StreamNode *node, StreamType kind)
 		if (kind == BMS_INDEX)
 			sbm->streamNode = node;
 		else
+		{
 			sbm->streamNode = make_opstream(kind, node, NULL);
+			sbm->streamNode->owner = sbm;
+		}
 	}
 }
 
@@ -1567,13 +1601,16 @@ tbm_bitmap_free(Node *bm)
 				StreamBitmap *sbm = (StreamBitmap *) bm;
 				StreamNode *sn = sbm->streamNode;
 
-				//elog(INFO, "tbm_bitmap_free (StreamBitmap), sbm = : %x", sbm);
-				elog(INFO, "tbm_bitmap_free (StreamNode), sn = : %x", sn);
+				if (sn->owner == sbm)
+				{
+					//elog(INFO, "tbm_bitmap_free (StreamBitmap), sbm = : %x", sbm);
+					elog(INFO, "tbm_bitmap_free (StreamNode), sn = : %x", sn);
 
-				sbm->streamNode = NULL;
-				if (sn &&
-					sn->free)
-					sn->free(sn);
+					sbm->streamNode = NULL;
+					if (sn &&
+						sn->free)
+						sn->free(sn);
+				}
 
 				pfree(sbm);
 

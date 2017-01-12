@@ -33,6 +33,7 @@
 #include "executor/instrument.h"
 #include "executor/nodeBitmapAnd.h"
 #include "nodes/tidbitmap.h"
+#include "nodes/memnodes.h"
 
 
 /* ----------------------------------------------------------------
@@ -129,6 +130,9 @@ MultiExecBitmapAnd(BitmapAndState *node)
 	 */
 	bitmapplans = node->bitmapplans;
 	nplans = node->nplans;
+
+	char * name = CurrentMemoryContext->name;
+	elog(INFO, "MultiExecBitmapAnd, memorycontext = %s", name);
 
 	/*
 	 * Scan all the subplans and AND their result bitmaps

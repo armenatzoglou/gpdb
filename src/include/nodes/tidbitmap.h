@@ -126,6 +126,7 @@ typedef struct StreamBitmap
 typedef struct StreamNode
 {
 	StreamType      type;       /* one of: BMS_INDEX, BMS_AND, BMS_OR */
+	StreamBitmap 	*owner;
 	bool          (*pull)(struct StreamNode *self, PagetableEntry *e);
 	BlockNumber		nextblock;	/* block number we're up to */
 	void		   *opaque;     /* for IndexStream only */

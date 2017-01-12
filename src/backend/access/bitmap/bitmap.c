@@ -213,6 +213,7 @@ bmgetmulti(PG_FUNCTION_ARGS)
 		is->free = stream_free;
 		is->set_instrument = NULL;
 		is->upd_instrument = NULL;
+		is->owner = NULL;
 
 		elog(INFO, "bmgetmulti, IndexStream = : %x, %d", is, is->type);
 
@@ -241,7 +242,11 @@ bmgetmulti(PG_FUNCTION_ARGS)
 		}
 		else if(IsA(bm, StreamBitmap))
 		{
+			char * name = CurrentMemoryContext->name;
+			elog(INFO, "bmgetmulti, create or, memorycontext = %s", name);
+			is->owner = bm;
 			stream_add_node((StreamBitmap *)bm, is, BMS_OR);
+
 		}
 		else
 		{
@@ -616,7 +621,7 @@ stream_free(StreamNode *self)
 	IndexStream *is = self;
 	BMStreamOpaque *so = (BMStreamOpaque *)is->opaque;
 
-	//elog(INFO, "stream_free, self = %x", self);
+	elog(INFO, "stream_free, self = %x", self);
 
 	/* opaque may be NULL */
 	if (so)
