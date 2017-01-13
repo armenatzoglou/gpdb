@@ -96,8 +96,6 @@ struct HashBitmap
 typedef struct HashStreamOpaque
 {
 	HashBitmap *tbm;
-	bool		tofree;			/* flag to indicate whether this opaque owns
-								 * the tbm, later used in tbm_stream_free() */
 	PagetableEntry *entry;
 }	HashStreamOpaque;
 
@@ -1212,8 +1210,7 @@ make_opstream(StreamType kind, StreamNode *n1, StreamNode *n2)
 	op->upd_instrument = opstream_upd_instrument;
 	op->owner = NULL;
 
-	elog(INFO, "make_opstream: %x, %d", op, op->type);
-	ereport(LOG, (errmsg("make_opstream: %x, %d", op, op->type), errprintstack(true)));
+
 	return (void *) op;
 }
 
@@ -1250,6 +1247,9 @@ stream_add_node(StreamBitmap *sbm, StreamNode *node, StreamType kind)
 		{
 			sbm->streamNode = make_opstream(kind, sbm->streamNode, node);
 			sbm->streamNode->owner = sbm;
+
+			elog(INFO, "make_opstream: %x, type = %d, owner = %x", sbm->streamNode, sbm->streamNode->type, sbm->streamNode->owner->streamNode);
+			ereport(LOG, (errmsg("make_opstream: %x, %d", sbm->streamNode, sbm->streamNode->type), errprintstack(true)));
 		}
 		else
 			elog(ERROR, "unknown stream type %i", (int) n->type);
@@ -1262,6 +1262,9 @@ stream_add_node(StreamBitmap *sbm, StreamNode *node, StreamType kind)
 		{
 			sbm->streamNode = make_opstream(kind, node, NULL);
 			sbm->streamNode->owner = sbm;
+
+			elog(INFO, "make_opstream: %x, type = %d, owner = %x", sbm->streamNode, sbm->streamNode->type, sbm->streamNode->owner->streamNode);
+			ereport(LOG, (errmsg("make_opstream: %x, %d", sbm->streamNode, sbm->streamNode->type), errprintstack(true)));
 		}
 	}
 }
@@ -1285,9 +1288,9 @@ tbm_create_stream_node(HashBitmap *tbm)
 	is->free = tbm_stream_free;
 	is->set_instrument = tbm_stream_set_instrument;
 	is->upd_instrument = tbm_stream_upd_instrument;
+	is->owner = tbm;
 
 	op->tbm = tbm;
-	op->tofree = true;
 	op->entry = NULL;
 
 	is->opaque = (void *) op;
@@ -1297,20 +1300,6 @@ tbm_create_stream_node(HashBitmap *tbm)
 	return is;
 }
 
-StreamNode *
-tbm_create_stream_node_ref(HashBitmap *tbm)
-{
-	IndexStream *sn = tbm_create_stream_node(tbm);
-
-	/*
-	 * Do not take ownership of the HashBitmap.
-	 */
-	HashStreamOpaque *op = (HashStreamOpaque *) sn->opaque;
-
-	op->tofree = false;
-
-	return sn;
-}
 
 /*
  * tbm_stream_block() - Fetch the next block from HashBitmap stream
@@ -1364,12 +1353,10 @@ tbm_stream_free(StreamNode *self)
 	}
 
 	/*
-	 * Only free the bitmap if we actually own it.
+	 * A reference to the plan is kept in the BitmapIndexScanState
+	 * so this is a no-op for now.
 	 */
-	if (op->tofree)
-	{
-		tbm_free(tbm);
-	}
+	tbm_free(tbm);
 	pfree(op);
 	pfree(self);
 }

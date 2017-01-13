@@ -132,7 +132,7 @@ MultiExecBitmapAnd(BitmapAndState *node)
 	nplans = node->nplans;
 
 	char * name = CurrentMemoryContext->name;
-	elog(INFO, "MultiExecBitmapAnd, memorycontext = %s", name);
+	//elog(INFO, "MultiExecBitmapAnd, memorycontext = %s", name);
 
 	/*
 	 * Scan all the subplans and AND their result bitmaps
@@ -251,8 +251,12 @@ MultiExecBitmapAnd(BitmapAndState *node)
 	if (hbm != NULL)
 	{
 		if(node->bitmap && IsA(node->bitmap, StreamBitmap))
+		{
+			StreamNode *nodeHbm = tbm_create_stream_node(hbm);
+			nodeHbm->owner = node->bitmap;
 			stream_add_node((StreamBitmap *)node->bitmap,
-						tbm_create_stream_node_ref(hbm), BMS_AND);
+						nodeHbm, BMS_AND);
+		}
 		else
 			node->bitmap = (Node *)hbm;
 	}

@@ -215,7 +215,7 @@ bmgetmulti(PG_FUNCTION_ARGS)
 		is->upd_instrument = NULL;
 		is->owner = NULL;
 
-		elog(INFO, "bmgetmulti, IndexStream = : %x, %d", is, is->type);
+
 
 		/* create a memory context for the stream */
 
@@ -239,11 +239,12 @@ bmgetmulti(PG_FUNCTION_ARGS)
 			StreamBitmap *sb = makeNode(StreamBitmap);
 			sb->streamNode = is;
 			bm = (Node *)sb;
+			is->owner = bm;
 		}
 		else if(IsA(bm, StreamBitmap))
 		{
 			char * name = CurrentMemoryContext->name;
-			elog(INFO, "bmgetmulti, create or, memorycontext = %s", name);
+			//elog(INFO, "bmgetmulti, create or, memorycontext = %s", name);
 			is->owner = bm;
 			stream_add_node((StreamBitmap *)bm, is, BMS_OR);
 
@@ -263,9 +264,14 @@ bmgetmulti(PG_FUNCTION_ARGS)
 			BMVector bmvec = &(scanPos->posvecs[vec]);
 			bmvec->bm_lovBuffer = InvalidBuffer;
 		}
+
+		elog(INFO, "bmgetmulti, IndexStream = : %x, type = %d, owner = %x", is, is->type, is->owner);
 	}
 
 	MIRROREDLOCK_BUFMGR_VERIFY_NO_LOCK_LEAK_EXIT;
+
+
+
 
 	PG_RETURN_POINTER(bm);
 }
