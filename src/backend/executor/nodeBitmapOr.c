@@ -198,8 +198,8 @@ MultiExecBitmapOr(BitmapOrState *node)
 	if (hbm != NULL)
 	{
 		if(node->bitmap && IsA(node->bitmap, StreamBitmap))
-			stream_add_node((StreamBitmap *)node->bitmap, 
-						tbm_create_stream_node(hbm), BMS_OR);
+			stream_add_node((StreamBitmap *)node->bitmap,
+					tbm_create_stream_node(hbm), BMS_OR);
 		else
 			node->bitmap = (Node *)hbm;
 	}

@@ -133,6 +133,7 @@ typedef struct StreamNode
 	void          (*free)(struct StreamNode *self);
 	void          (*set_instrument)(struct StreamNode *self, struct Instrumentation *instr);
 	void          (*upd_instrument)(struct StreamNode *self);
+	StreamBitmap 	*owner;
 } StreamNode;
 
 /*

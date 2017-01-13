@@ -213,6 +213,7 @@ bmgetmulti(PG_FUNCTION_ARGS)
 		is->free = stream_free;
 		is->set_instrument = NULL;
 		is->upd_instrument = NULL;
+		is->owner = NULL;
 
 		/* create a memory context for the stream */
 
@@ -236,9 +237,11 @@ bmgetmulti(PG_FUNCTION_ARGS)
 			StreamBitmap *sb = makeNode(StreamBitmap);
 			sb->streamNode = is;
 			bm = (Node *)sb;
+			is->owner = bm;
 		}
 		else if(IsA(bm, StreamBitmap))
 		{
+			is->owner = bm;
 			stream_add_node((StreamBitmap *)bm, is, BMS_OR);
 		}
 		else

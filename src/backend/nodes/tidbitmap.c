@@ -1073,13 +1073,15 @@ tbm_comparator(const void *left, const void *right)
 static void
 opstream_free(StreamNode *self)
 {
+	Assert(self->owner);
 	ListCell   *cell;
 
 	foreach(cell, self->input)
 	{
 		StreamNode *inp = (StreamNode *) lfirst(cell);
+		Assert(inp->owner);
 
-		if (inp->free)
+		if (inp->free && self->owner == inp->owner)
 			inp->free(inp);
 	}
 	list_free(self->input);
@@ -1130,6 +1132,7 @@ make_opstream(StreamType kind, StreamNode *n1, StreamNode *n2)
 	op->free = opstream_free;
 	op->set_instrument = opstream_set_instrument;
 	op->upd_instrument = opstream_upd_instrument;
+	op->owner = NULL;
 	return (void *) op;
 }
 
@@ -1142,6 +1145,8 @@ make_opstream(StreamType kind, StreamNode *n1, StreamNode *n2)
 void
 stream_add_node(StreamBitmap *sbm, StreamNode *node, StreamType kind)
 {
+	Assert(node->owner);
+
 	/* CDB: Tell node where to put its statistics for EXPLAIN ANALYZE. */
 	if (node->set_instrument)
 		node->set_instrument(node, sbm->instrument);
@@ -1164,6 +1169,7 @@ stream_add_node(StreamBitmap *sbm, StreamNode *node, StreamType kind)
 				 (n->type == BMS_INDEX))
 		{
 			sbm->streamNode = make_opstream(kind, sbm->streamNode, node);
+			sbm->streamNode->owner = sbm;
 		}
 		else
 			elog(ERROR, "unknown stream type %i", (int) n->type);
@@ -1173,7 +1179,10 @@ stream_add_node(StreamBitmap *sbm, StreamNode *node, StreamType kind)
 		if (kind == BMS_INDEX)
 			sbm->streamNode = node;
 		else
+		{
 			sbm->streamNode = make_opstream(kind, node, NULL);
+			sbm->streamNode->owner = sbm;
+		}
 	}
 }
 
@@ -1196,6 +1205,7 @@ tbm_create_stream_node(HashBitmap *tbm)
 	is->free = tbm_stream_free;
 	is->set_instrument = tbm_stream_set_instrument;
 	is->upd_instrument = tbm_stream_upd_instrument;
+	is->owner = tbm;
 
 	op->tbm = tbm;
 	op->entry = NULL;
@@ -1489,11 +1499,12 @@ tbm_bitmap_free(Node *bm)
 				StreamBitmap *sbm = (StreamBitmap *) bm;
 				StreamNode *sn = sbm->streamNode;
 
-				sbm->streamNode = NULL;
-				if (sn &&
-					sn->free)
-					sn->free(sn);
-
+				if (sn->owner == sbm)
+				{
+					sbm->streamNode = NULL;
+					if (sn && sn->free)
+						sn->free(sn);
+				}
 				pfree(sbm);
 
 				break;
