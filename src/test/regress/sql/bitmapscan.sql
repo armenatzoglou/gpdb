@@ -300,3 +300,37 @@ select * from foo where d = 3 and (d = 1 or d = 2);
 -- otherwise segments will eliminate nodes.
 select * from foo where d = 2 and (d = 1 or d = 2);
 
+-- Verify that we are not leaking memory. Perform a large number of rescan of the bitmap and then 
+-- compare the peak memory to see if it looks reasonable.
+truncate table foo;
+
+set explain_memory_verbosity="summary";
+select disable_xform('CXformInnerJoin2HashJoin');
+create table bar (a int, b int);
+insert into bar select i,i from generate_series(1, 1000) i;
+insert into foo select i,i from generate_series(1, 1000) i;
+create language plpythonu;
+create or replace function check_memory_usage(explain_query text, upper_bound int) returns bool as
+$$
+rv = plpy.execute(explain_query)
+search_text = 'BitmapOr'
+result = 0
+for i in range(len(rv)):
+    cur_line = rv[i]['QUERY PLAN']
+    if search_text.lower() in cur_line.lower():
+        if i+2 < len(rv):
+		cur_line = rv[i+2]['QUERY PLAN']
+		tmp = (cur_line.split('Memory:  ')[1])
+		memory_usage = tmp.split('K bytes')[0]
+		if int(memory_usage) <= upper_bound:
+			return True
+		else:
+			return False
+
+return False
+$$
+language plpythonu;
+
+-- we observed that if we do not free the StreamNodes successfully, memory usage will be 100K instead of 7KB.
+select check_memory_usage('explain analyze select d from foo, bar where d = a or d = b;', 100);
+

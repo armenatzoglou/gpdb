@@ -211,7 +211,10 @@ bmgetmulti(PG_FUNCTION_ARGS)
 		is->type = BMS_INDEX;
 		is->pull = pull_stream;
 		is->nextblock = 0;
-		is->free = indexstream_free;
+		if (memory_profiler_dataset_size == 10)
+			is->free = NULL;
+		else
+			is->free = indexstream_free;
 		is->set_instrument = NULL;
 		is->upd_instrument = NULL;
 

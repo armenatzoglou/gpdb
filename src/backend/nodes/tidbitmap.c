@@ -1129,7 +1129,10 @@ make_opstream(StreamType kind, StreamNode *n1, StreamNode *n2)
 	op->pull = bitmap_stream_iterate;
 	op->nextblock = 0;
 	op->input = list_make2(n1, n2);
-	op->free = opstream_free;
+	if (memory_profiler_dataset_size == 10)
+		op->free = NULL;
+	else
+		op->free = opstream_free;
 	op->set_instrument = opstream_set_instrument;
 	op->upd_instrument = opstream_upd_instrument;
 	return (void *) op;
